@@ -3,10 +3,14 @@ package gt.uvg.lab09.viewModel
 import androidx.lifecycle.ViewModel
 import gt.uvg.lab09.model.Product
 import gt.uvg.lab09.model.Profile
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 class VersusViewModel : ViewModel() {
 
-    val profiles = listOf(
+    private val initialProfiles = listOf(
         Profile(
             id = 1,
             name = "Nike",
@@ -23,7 +27,7 @@ class VersusViewModel : ViewModel() {
         )
     )
 
-    val products = listOf(
+    private val initialProducts = listOf(
         Product(
             id = 1,
             name = "Air Jordan",
@@ -49,4 +53,26 @@ class VersusViewModel : ViewModel() {
             technicalDetails = "Fabricada con tejido ligero y transpirable para ofrecer mayor comodidad durante la actividad física."
         )
     )
+
+    private val _uiState = MutableStateFlow(
+        VersusUiState(
+            products = initialProducts,
+            profiles = initialProfiles,
+            favoriteIds = emptySet()
+        )
+    )
+
+    val uiState: StateFlow<VersusUiState> = _uiState.asStateFlow()
+
+    fun toggleFavorite(productId: Int) {
+        _uiState.update { currentState ->
+            val favoritosActuales = currentState.favoriteIds
+            val nuevosFavoritos = if (productId in favoritosActuales) {
+                favoritosActuales - productId
+            } else {
+                favoritosActuales + productId
+            }
+            currentState.copy(favoriteIds = nuevosFavoritos)
+        }
+    }
 }
