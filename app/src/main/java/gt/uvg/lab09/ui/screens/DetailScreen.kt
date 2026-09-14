@@ -1,8 +1,11 @@
 package gt.uvg.lab09.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import gt.uvg.lab09.model.Product
@@ -16,7 +19,7 @@ fun DetailScreen(
     onProfileClick: (Int) -> Unit,
     onBackClick: () -> Unit
 ) {
-    var showTechnicalDetails by remember {
+    var showTechnicalDetails by rememberSaveable {
         mutableStateOf(false)
     }
 
@@ -40,7 +43,8 @@ fun DetailScreen(
         Column(
             modifier = Modifier
                 .padding(innerPadding)
-                .padding(16.dp),
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
 
