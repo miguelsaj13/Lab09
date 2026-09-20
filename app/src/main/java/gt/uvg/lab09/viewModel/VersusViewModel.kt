@@ -300,6 +300,7 @@ class VersusViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(
         VersusUiState(
             products = products,
+            visibleProducts = products,
             profiles = initialProfiles,
             favoriteIds = emptySet()
         )
@@ -310,17 +311,28 @@ class VersusViewModel : ViewModel() {
     fun toggleFavorite(productId: Int) {
         _uiState.update { currentState ->
 
-            val favoritosActuales = currentState.favoriteIds
+            val currentFavorites = currentState.favoriteIds
 
-            val nuevosFavoritos =
-                if (productId in favoritosActuales) {
-                    favoritosActuales - productId
+            val newFavorites =
+                if (productId in currentFavorites) {
+                    currentFavorites - productId
                 } else {
-                    favoritosActuales + productId
+                    currentFavorites + productId
                 }
 
             currentState.copy(
-                favoriteIds = nuevosFavoritos
+                favoriteIds = newFavorites
+            )
+        }
+    }
+    fun updateQuery(newQuery: String){
+        _uiState.update { currentState ->
+            currentState.copy(
+                query = newQuery,
+                visibleProducts = filterProducts(
+                    products = currentState.products,
+                    query = newQuery
+                )
             )
         }
     }

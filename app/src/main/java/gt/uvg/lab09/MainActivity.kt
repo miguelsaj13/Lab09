@@ -28,7 +28,8 @@ class MainActivity : ComponentActivity() {
 
                 VersusNavigation(
                     uiState = uiState,
-                    onFavoriteClick = versusViewModel::toggleFavorite
+                    onFavoriteClick = versusViewModel::toggleFavorite,
+                    onQueryChange = versusViewModel::updateQuery
                 )
             }
         }
