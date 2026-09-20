@@ -9,26 +9,59 @@ import gt.uvg.lab09.ui.screens.CatalogScreen
 import gt.uvg.lab09.ui.screens.DetailScreen
 import gt.uvg.lab09.ui.screens.ProfileScreen
 import gt.uvg.lab09.viewModel.VersusUiState
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 
+private const val TRANSITION_DURATION_MS = 300
+
+private val openTransition: ContentTransform =
+    slideInHorizontally(
+        animationSpec = tween(TRANSITION_DURATION_MS),
+        initialOffsetX = { fullWidth -> fullWidth }
+    ) togetherWith slideOutHorizontally(
+        animationSpec = tween(TRANSITION_DURATION_MS),
+        targetOffsetX = { fullWidth -> -fullWidth }
+    )
+
+private val backTransition: ContentTransform =
+    slideInHorizontally(
+        animationSpec = tween(TRANSITION_DURATION_MS),
+        initialOffsetX = { fullWidth -> -fullWidth }
+    ) togetherWith slideOutHorizontally(
+        animationSpec = tween(TRANSITION_DURATION_MS),
+        targetOffsetX = { fullWidth -> fullWidth }
+    )
 @Composable
 fun VersusNavigation(
     uiState: VersusUiState,
-    onFavoriteClick: (Int) -> Unit
+    onFavoriteClick: (Int) -> Unit,
+    onQueryChange: (String) -> Unit
 ) {
     val backStack = rememberNavBackStack(VersusNavKey.Catalog)
-
+    val gridState = rememberLazyGridState()
     BackHandler(enabled = backStack.size > 1) {
         backStack.removeLastOrNull()
     }
 
     NavDisplay(
         backStack = backStack,
+        transitionSpec = { openTransition },
+        popTransitionSpec = { backTransition },
+        predictivePopTransitionSpec = { backTransition },
         entryProvider = entryProvider {
 
             entry<VersusNavKey.Catalog> {
                 CatalogScreen(
-                    products = uiState.products,
+                    products = uiState.visibleProducts,
+                    totalCount = uiState.products.size,
+                    query = uiState.query,
                     favoriteIds = uiState.favoriteIds,
+                    gridState = gridState,
+                    onQueryChange = onQueryChange,
                     onProductClick = { productId ->
                         backStack.add(VersusNavKey.Detail(productId))
                     },
@@ -58,7 +91,7 @@ fun VersusNavigation(
             }
 
             entry<VersusNavKey.ProfileRoute> { key ->
-                val profile = uiState.profiles.firstOrNull { it.id == key.profileID}
+                val profile = uiState.profiles.firstOrNull { it.id == key.profileId}
 
                 if (profile != null) {
                     ProfileScreen(
