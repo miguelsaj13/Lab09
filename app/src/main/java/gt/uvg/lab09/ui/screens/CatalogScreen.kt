@@ -1,87 +1,28 @@
 package gt.uvg.lab09.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyGridState
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import gt.uvg.lab09.model.Product
-import kotlinx.coroutines.launch
-
-private const val SCROLL_TO_TOP_THRESHOLD = 4
-
-private val FAB_CLEARANCE = 88.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CatalogScreen(
     products: List<Product>,
-    totalCount: Int,
-    query: String,
     favoriteIds: Set<Int>,
-    gridState: LazyGridState,
-    onQueryChange: (String) -> Unit,
     onProductClick: (Int) -> Unit,
-    onFavoriteClick: (Int) -> Unit,
-    orderUnitCount: Int,
-    onOrderClick: () -> Unit
+    onFavoriteClick: (Int) -> Unit
 ) {
-    val coroutineScope = rememberCoroutineScope()
-
-    val showScrollToTop by remember {
-        derivedStateOf {
-            gridState.firstVisibleItemIndex >= SCROLL_TO_TOP_THRESHOLD
-        }
-    }
-
-    val handleQueryChange: (String) -> Unit = { newQuery ->
-        onQueryChange(newQuery)
-
-        coroutineScope.launch {
-            gridState.scrollToItem(0)
-        }
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text("VERSUS")
-                },
-                actions = {
-                    TextButton(
-                        onClick = onOrderClick,
-                        modifier = Modifier.heightIn(min = 48.dp)
-                    ) {
-                        Text("Pedido ($orderUnitCount)")
-                    }
-                }
-            )
-        },
-        floatingActionButton = {
-            ScrollToTopButton(
-                visible = showScrollToTop,
-                onClick = {
-                    coroutineScope.launch {
-                        gridState.animateScrollToItem(0)
-                    }
                 }
             )
         }
@@ -89,65 +30,54 @@ fun CatalogScreen(
 
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(top = innerPadding.calculateTopPadding())
+                .padding(innerPadding)
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-
-            ProductSearchField(
-                query = query,
-                onQueryChange = handleQueryChange,
-                modifier = Modifier.padding(
-                    start = 16.dp,
-                    end = 16.dp,
-                    top = 16.dp
-                )
-            )
-
             Text(
-                text = "${products.size} de $totalCount productos",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(
-                    horizontal = 16.dp,
-                    vertical = 8.dp
-                )
+                text = "Productos destacados",
+                style = MaterialTheme.typography.headlineMedium
             )
 
-            if (products.isEmpty()) {
-                EmptySearchState(
-                    onClearClick = {
-                        handleQueryChange("")
-                    },
-                    modifier = Modifier.weight(1f)
-                )
-            } else {
-                LazyVerticalGrid(
-                    state = gridState,
-                    columns = GridCells.Fixed(2),
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(
-                        start = 16.dp,
-                        end = 16.dp,
-                        top = 8.dp,
-                        bottom = innerPadding.calculateBottomPadding() + FAB_CLEARANCE
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
+            products.forEach { product ->
 
-                    items(
-                        items = products,
-                        key = { product ->
-                            product.id
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            onProductClick(product.id)
                         }
-                    ) { product ->
-
-                        ProductCard(
-                            product = product,
-                            isFavorite = product.id in favoriteIds,
-                            onProductClick = onProductClick,
-                            onFavoriteClick = onFavoriteClick,
-                            modifier = Modifier.fillMaxSize()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = product.name,
+                            style = MaterialTheme.typography.titleLarge
                         )
+
+                        Text(product.description)
+
+                        Text(
+                            text = "Q %.2f".format(product.price),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+
+                        TextButton(
+                            onClick = {
+                                onFavoriteClick(product.id)
+                            }
+                        ) {
+                            Text(
+                                if (product.id in favoriteIds) {
+                                    "Favorito"
+                                } else {
+                                    "Agregar a favoritos"
+                                }
+                            )
+                        }
                     }
                 }
             }
