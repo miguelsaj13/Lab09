@@ -13,5 +13,7 @@ sealed interface VersusNavKey: NavKey{
 
     @Serializable
     data class ProfileRoute(val profileId: Int) : VersusNavKey
-}
 
+    @Serializable
+    data object Order : VersusNavKey
+}

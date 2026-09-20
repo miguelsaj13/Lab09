@@ -1,8 +1,16 @@
 package gt.uvg.lab09.viewModel
 
 import androidx.lifecycle.ViewModel
+import gt.uvg.lab09.model.OrderRejectionReason
+import gt.uvg.lab09.model.OrderUpdateResult
 import gt.uvg.lab09.model.Product
 import gt.uvg.lab09.model.Profile
+import gt.uvg.lab09.model.addToOrder
+import gt.uvg.lab09.model.calculateOrderTotalMinorUnits
+import gt.uvg.lab09.model.calculateOrderUnitCount
+import gt.uvg.lab09.model.calculateLineSubtotalMinorUnits
+import gt.uvg.lab09.model.decreaseOrderLine
+import gt.uvg.lab09.model.removeOrderLine
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -336,4 +344,92 @@ class VersusViewModel : ViewModel() {
             )
         }
     }
+
+    fun addProductToOrder(productId: Int, increment: Int = 1) {
+        _uiState.update { currentState ->
+            when (
+                val result = addToOrder(
+                    catalog = currentState.products,
+                    currentLines = currentState.orderLines,
+                    productId = productId,
+                    increment = increment
+                )
+            ) {
+                is OrderUpdateResult.Success -> currentState.withOrderLines(
+                    lines = result.lines,
+                    feedback = OrderFeedback(
+                        message = if (increment == 1) {
+                            "Producto agregado al pedido."
+                        } else {
+                            "$increment unidades agregadas al pedido."
+                        },
+                        isError = false
+                    )
+                )
+
+                is OrderUpdateResult.Rejected -> currentState.copy(
+                    orderFeedback = OrderFeedback(
+                        message = result.reason.toVisibleMessage(),
+                        isError = true
+                    )
+                )
+            }
+        }
+    }
+
+    fun decreaseProductInOrder(productId: Int) {
+        _uiState.update { currentState ->
+            val updatedLines = decreaseOrderLine(
+                currentLines = currentState.orderLines,
+                productId = productId
+            )
+            currentState.withOrderLines(
+                lines = updatedLines,
+                feedback = null
+            )
+        }
+    }
+
+    fun removeProductFromOrder(productId: Int) {
+        _uiState.update { currentState ->
+            val updatedLines = removeOrderLine(
+                currentLines = currentState.orderLines,
+                productId = productId
+            )
+            currentState.withOrderLines(
+                lines = updatedLines,
+                feedback = null
+            )
+        }
+    }
+
+    fun clearOrderFeedback() {
+        _uiState.update { currentState ->
+            currentState.copy(orderFeedback = null)
+        }
+    }
+}
+
+private fun VersusUiState.withOrderLines(
+    lines: List<gt.uvg.lab09.model.OrderLine>,
+    feedback: OrderFeedback?
+): VersusUiState = copy(
+    orderLines = lines,
+    orderLineSubtotalsMinorUnits = lines.associate { line ->
+        line.product.id to calculateLineSubtotalMinorUnits(line)
+    },
+    orderUnitCount = calculateOrderUnitCount(lines),
+    orderTotalMinorUnits = calculateOrderTotalMinorUnits(lines),
+    orderFeedback = feedback
+)
+
+private fun OrderRejectionReason.toVisibleMessage(): String = when (this) {
+    OrderRejectionReason.PRODUCT_NOT_FOUND ->
+        "No se encontró el producto solicitado. El pedido no cambió."
+    OrderRejectionReason.NON_POSITIVE_INCREMENT ->
+        "La cantidad por agregar debe ser mayor que cero. El pedido no cambió."
+    OrderRejectionReason.OUT_OF_STOCK ->
+        "El producto está agotado. El pedido no cambió."
+    OrderRejectionReason.STOCK_EXCEEDED ->
+        "No hay existencias suficientes para agregar otra unidad. El pedido no cambió."
 }
