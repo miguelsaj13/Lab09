@@ -9,8 +9,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import gt.uvg.lab09.model.Product
-import gt.uvg.lab09.model.formatProductPrice
-import gt.uvg.lab09.viewModel.OrderFeedback
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -19,11 +17,7 @@ fun DetailScreen(
     isFavorite: Boolean,
     onFavoriteClick: () -> Unit,
     onProfileClick: (Int) -> Unit,
-    onBackClick: () -> Unit,
-    quantityInOrder: Int,
-    orderFeedback: OrderFeedback?,
-    onAddToOrder: () -> Unit,
-    onDismissOrderFeedback: () -> Unit
+    onBackClick: () -> Unit
 ) {
     var showTechnicalDetails by rememberSaveable {
         mutableStateOf(false)
@@ -62,66 +56,12 @@ fun DetailScreen(
             Text(product.description)
 
             Text(
-                text = formatProductPrice(product),
+                text = "Q %.2f".format(product.price),
                 style = MaterialTheme.typography.titleLarge
             )
 
-            Text(
-                text = if (product.stock > 0) {
-                    "Existencias: ${product.stock} · En el pedido: $quantityInOrder"
-                } else {
-                    "Agotado"
-                },
-                style = MaterialTheme.typography.bodyMedium
-            )
-
             Button(
-                onClick = onAddToOrder,
-                enabled = product.stock > 0,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 48.dp)
-            ) {
-                Text("Agregar al pedido")
-            }
-
-            orderFeedback?.let { feedback ->
-                Surface(
-                    color = if (feedback.isError) {
-                        MaterialTheme.colorScheme.errorContainer
-                    } else {
-                        MaterialTheme.colorScheme.primaryContainer
-                    },
-                    contentColor = if (feedback.isError) {
-                        MaterialTheme.colorScheme.onErrorContainer
-                    } else {
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    },
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = feedback.message,
-                            modifier = Modifier.weight(1f)
-                        )
-                        TextButton(
-                            onClick = onDismissOrderFeedback,
-                            modifier = Modifier.heightIn(min = 48.dp)
-                        ) {
-                            Text("Cerrar")
-                        }
-                    }
-                }
-            }
-
-            OutlinedButton(
-                onClick = onFavoriteClick,
-                modifier = Modifier.heightIn(min = 48.dp)
+                onClick = onFavoriteClick
             ) {
                 Text(
                     if (isFavorite) {
@@ -154,11 +94,10 @@ fun DetailScreen(
 
             HorizontalDivider()
 
-            OutlinedButton(
+            Button(
                 onClick = {
                     onProfileClick(product.profileId)
-                },
-                modifier = Modifier.heightIn(min = 48.dp)
+                }
             ) {
                 Text("Ver fabricante")
             }

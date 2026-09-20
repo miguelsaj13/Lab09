@@ -6,7 +6,5 @@ data class Product(
     val description: String,
     val price: Double,
     val profileId: Int,
-    val technicalDetails: String,
-    val stock: Int,
-    val imageUrl: String
+    val technicalDetails: String
 )
