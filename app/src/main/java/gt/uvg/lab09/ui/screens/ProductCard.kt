@@ -16,6 +16,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import gt.uvg.lab09.model.Product
+import gt.uvg.lab09.model.formatProductPrice
 
 @Composable
 fun ProductCard(
@@ -63,7 +64,7 @@ fun ProductCard(
             )
 
             Text(
-                text = "Q %.2f".format(product.price),
+                text = formatProductPrice(product),
                 style = MaterialTheme.typography.titleSmall
             )
 

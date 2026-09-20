@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
@@ -38,7 +39,9 @@ fun CatalogScreen(
     gridState: LazyGridState,
     onQueryChange: (String) -> Unit,
     onProductClick: (Int) -> Unit,
-    onFavoriteClick: (Int) -> Unit
+    onFavoriteClick: (Int) -> Unit,
+    orderUnitCount: Int,
+    onOrderClick: () -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
 
@@ -61,6 +64,14 @@ fun CatalogScreen(
             TopAppBar(
                 title = {
                     Text("VERSUS")
+                },
+                actions = {
+                    TextButton(
+                        onClick = onOrderClick,
+                        modifier = Modifier.heightIn(min = 48.dp)
+                    ) {
+                        Text("Pedido ($orderUnitCount)")
+                    }
                 }
             )
         },
