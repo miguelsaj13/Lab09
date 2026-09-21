@@ -28,7 +28,12 @@ class MainActivity : ComponentActivity() {
 
                 VersusNavigation(
                     uiState = uiState,
-                    onFavoriteClick = versusViewModel::toggleFavorite
+                    onFavoriteClick = versusViewModel::toggleFavorite,
+                    onQueryChange = versusViewModel::updateQuery,
+                    onAddToOrder = versusViewModel::addProductToOrder,
+                    onDecreaseOrderItem = versusViewModel::decreaseProductInOrder,
+                    onRemoveOrderItem = versusViewModel::removeProductFromOrder,
+                    onDismissOrderFeedback = versusViewModel::clearOrderFeedback
                 )
             }
         }
