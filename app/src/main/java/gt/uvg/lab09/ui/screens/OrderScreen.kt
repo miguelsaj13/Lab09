@@ -10,19 +10,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -54,7 +46,9 @@ fun OrderScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Pedido") },
+                title = {
+                    Text("Pedido")
+                },
                 navigationIcon = {
                     TextButton(
                         onClick = onBackClick,
@@ -66,11 +60,13 @@ fun OrderScreen(
             )
         }
     ) { innerPadding ->
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
+
             feedback?.let { currentFeedback ->
                 OrderFeedbackMessage(
                     feedback = currentFeedback,
@@ -84,6 +80,7 @@ fun OrderScreen(
             }
 
             if (lines.isEmpty()) {
+
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -99,14 +96,20 @@ fun OrderScreen(
                             text = "Tu pedido está vacío",
                             style = MaterialTheme.typography.titleLarge
                         )
-                        Text("Agrega productos desde su pantalla de detalle.")
+
+                        Text(
+                            text = "Agrega productos desde su pantalla de detalle."
+                        )
+
                         Text(
                             text = "Total: ${formatQuetzales(0L)}",
                             style = MaterialTheme.typography.titleMedium
                         )
                     }
                 }
+
             } else {
+
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -122,19 +125,33 @@ fun OrderScreen(
 
                     items(
                         items = lines,
-                        key = { line -> line.product.id }
+                        key = { line ->
+                            line.product.id
+                        }
                     ) { line ->
+
                         OrderLineCard(
                             line = line,
-                            subtotalMinorUnits = lineSubtotalsMinorUnits[line.product.id] ?: 0L,
-                            onIncrease = { onIncrease(line.product.id) },
-                            onDecrease = { onDecrease(line.product.id) },
-                            onRemove = { onRemove(line.product.id) }
+                            subtotalMinorUnits =
+                                lineSubtotalsMinorUnits[line.product.id] ?: 0L,
+                            onIncrease = {
+                                onIncrease(line.product.id)
+                            },
+                            onDecrease = {
+                                onDecrease(line.product.id)
+                            },
+                            onRemove = {
+                                onRemove(line.product.id)
+                            }
                         )
                     }
 
                     item(key = "total") {
-                        HorizontalDivider(modifier = Modifier.padding(top = 4.dp))
+
+                        HorizontalDivider(
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -142,7 +159,11 @@ fun OrderScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Total", style = MaterialTheme.typography.titleLarge)
+                            Text(
+                                text = "Total",
+                                style = MaterialTheme.typography.titleLarge
+                            )
+
                             Text(
                                 text = formatQuetzales(totalMinorUnits),
                                 style = MaterialTheme.typography.titleLarge
@@ -181,7 +202,12 @@ private fun OrderFeedbackMessage(
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(feedback.message, modifier = Modifier.weight(1f))
+
+            Text(
+                text = feedback.message,
+                modifier = Modifier.weight(1f)
+            )
+
             TextButton(
                 onClick = onDismiss,
                 modifier = Modifier.heightIn(min = 48.dp)
@@ -200,13 +226,23 @@ private fun OrderLineCard(
     onDecrease: () -> Unit,
     onRemove: () -> Unit
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(line.product.name, style = MaterialTheme.typography.titleMedium)
-            Text("Precio unitario: ${formatProductPrice(line.product)}")
+
+            Text(
+                text = line.product.name,
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Text(
+                text = "Precio unitario: ${formatProductPrice(line.product)}"
+            )
+
             Text(
                 text = "Subtotal: ${formatQuetzales(subtotalMinorUnits)}",
                 style = MaterialTheme.typography.titleSmall
@@ -216,14 +252,12 @@ private fun OrderLineCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(
+
+                TextButton(
                     onClick = onDecrease,
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.heightIn(min = 48.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Remove,
-                        contentDescription = "Disminuir cantidad de ${line.product.name}"
-                    )
+                    Text("-")
                 }
 
                 Text(
@@ -231,27 +265,23 @@ private fun OrderLineCard(
                     style = MaterialTheme.typography.bodyLarge
                 )
 
-                IconButton(
+                TextButton(
                     onClick = onIncrease,
                     enabled = line.quantity < line.product.stock,
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.heightIn(min = 48.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Aumentar cantidad de ${line.product.name}"
-                    )
+                    Text("+")
                 }
 
-                Spacer(modifier = Modifier.weight(1f))
+                Spacer(
+                    modifier = Modifier.weight(1f)
+                )
 
-                IconButton(
+                TextButton(
                     onClick = onRemove,
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.heightIn(min = 48.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Eliminar ${line.product.name} del pedido"
-                    )
+                    Text("Eliminar")
                 }
             }
         }
