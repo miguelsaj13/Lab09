@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -36,11 +37,13 @@ fun OrderScreen(
     lines: List<OrderLine>,
     lineSubtotalsMinorUnits: Map<Int, Long>,
     totalMinorUnits: Long,
+    orderUnitCount: Int,
     feedback: OrderFeedback?,
     onIncrease: (Int) -> Unit,
     onDecrease: (Int) -> Unit,
     onRemove: (Int) -> Unit,
     onDismissFeedback: () -> Unit,
+    onCheckoutClick: () -> Unit,
     onBackClick: () -> Unit
 ) {
     Scaffold(
@@ -171,6 +174,17 @@ fun OrderScreen(
                         }
                     }
                 }
+            }
+
+            Button(
+                onClick = onCheckoutClick,
+                enabled = orderUnitCount > 0,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .heightIn(min = 48.dp)
+            ) {
+                Text("Continuar al checkout")
             }
         }
     }

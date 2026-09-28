@@ -18,6 +18,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import gt.uvg.lab09.viewModel.CheckoutUiState
 import gt.uvg.lab09.ui.screens.CheckoutScreen
+import gt.uvg.lab09.ui.screens.ConfirmationScreen
 import gt.uvg.lab09.model.BillingType
 import gt.uvg.lab09.model.PaymentMethod
 
@@ -58,6 +59,7 @@ fun VersusNavigation(
     onCheckoutNumberTouched: () -> Unit,
     onCheckoutNitTouched: () -> Unit,
     onCheckoutBusinessNameTouched: () -> Unit,
+    onConfirmOrder: () -> Boolean,
 
     onFavoriteClick: (Int) -> Unit,
     onQueryChange: (String) -> Unit,
@@ -68,8 +70,16 @@ fun VersusNavigation(
 ) {
     val backStack = rememberNavBackStack(VersusNavKey.Catalog)
     val gridState = rememberLazyGridState()
+    val returnToCatalog: () -> Unit = {
+        backStack.clear()
+        backStack.add(VersusNavKey.Catalog)
+    }
     BackHandler(enabled = backStack.size > 1) {
-        backStack.removeLastOrNull()
+        if (backStack.lastOrNull() == VersusNavKey.Confirmation) {
+            returnToCatalog()
+        } else {
+            backStack.removeLastOrNull()
+        }
     }
 
     NavDisplay(
@@ -148,6 +158,7 @@ fun VersusNavigation(
                     lines = uiState.orderLines,
                     lineSubtotalsMinorUnits = uiState.orderLineSubtotalsMinorUnits,
                     totalMinorUnits = uiState.orderTotalMinorUnits,
+                    orderUnitCount = uiState.orderUnitCount,
                     feedback = uiState.orderFeedback,
                     onIncrease = { productId ->
                         onAddToOrder(productId, 1)
@@ -155,6 +166,9 @@ fun VersusNavigation(
                     onDecrease = onDecreaseOrderItem,
                     onRemove = onRemoveOrderItem,
                     onDismissFeedback = onDismissOrderFeedback,
+                    onCheckoutClick = {
+                        backStack.add(VersusNavKey.Checkout)
+                    },
                     onBackClick = {
                         backStack.removeLastOrNull()
                     }
@@ -181,12 +195,21 @@ fun VersusNavigation(
                         onCheckoutBusinessNameTouched,
 
                     onConfirmClick = {
-                        // Se implementará en un paso posterior.
+                        if (onConfirmOrder()) {
+                            backStack.add(VersusNavKey.Confirmation)
+                        }
                     },
 
                     onBackClick = {
                         backStack.removeLastOrNull()
                     }
+                )
+            }
+
+            entry<VersusNavKey.Confirmation> {
+                ConfirmationScreen(
+                    receipt = uiState.latestReceipt,
+                    onCatalogClick = returnToCatalog
                 )
             }
         }

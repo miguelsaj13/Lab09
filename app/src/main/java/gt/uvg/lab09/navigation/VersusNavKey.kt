@@ -19,4 +19,7 @@ sealed interface VersusNavKey: NavKey{
 
     @Serializable
     data object Checkout : VersusNavKey
+
+    @Serializable
+    data object Confirmation : VersusNavKey
 }
