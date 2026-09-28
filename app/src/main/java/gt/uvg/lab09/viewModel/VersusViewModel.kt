@@ -3,6 +3,7 @@ package gt.uvg.lab09.viewModel
 import androidx.lifecycle.ViewModel
 import gt.uvg.lab09.model.BillingType
 import gt.uvg.lab09.model.OrderRejectionReason
+import gt.uvg.lab09.model.OrderReceipt
 import gt.uvg.lab09.model.OrderUpdateResult
 import gt.uvg.lab09.model.PaymentMethod
 import gt.uvg.lab09.model.Product
@@ -20,6 +21,8 @@ import kotlinx.coroutines.flow.update
 import kotlin.random.Random
 
 class VersusViewModel : ViewModel() {
+
+    private var nextOrderNumber = 1
 
     //Profiles que vienen del lab 09
     private val initialProfiles = listOf(
@@ -421,6 +424,47 @@ class VersusViewModel : ViewModel() {
                 currentState
             }
         }
+    }
+
+    /**
+     * Confirma únicamente si el formulario y el pedido siguen siendo válidos.
+     * El recibo se construye antes de vaciar el pedido para conservar su total.
+     */
+    fun confirmOrder(): Boolean {
+        val checkoutState = _checkoutUiState.value
+        val orderState = _uiState.value
+
+        if (!checkoutState.isFormValid || orderState.orderUnitCount < 1) {
+            return false
+        }
+
+        val receipt = OrderReceipt(
+            folio = "#ORD-${nextOrderNumber.toString().padStart(5, '0')}",
+            customerName = checkoutState.name.trim(),
+            billingType = checkoutState.billingType,
+            nit = if (checkoutState.billingType == BillingType.FACTURA_CON_NIT) {
+                checkoutState.nit.trim()
+            } else {
+                null
+            },
+            businessName = if (
+                checkoutState.billingType == BillingType.FACTURA_CON_NIT
+            ) {
+                checkoutState.businessName.trim()
+            } else {
+                null
+            },
+            paymentMethod = checkoutState.paymentMethod,
+            totalMinorUnits = orderState.orderTotalMinorUnits
+        )
+
+        _uiState.value = orderState
+            .withOrderLines(lines = emptyList(), feedback = null)
+            .copy(latestReceipt = receipt)
+        _checkoutUiState.value = CheckoutUiState()
+        nextOrderNumber += 1
+
+        return true
     }
 
     fun toggleFavorite(productId: Int) {

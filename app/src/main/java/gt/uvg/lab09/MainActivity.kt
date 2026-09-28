@@ -66,6 +66,7 @@ class MainActivity : ComponentActivity() {
                         versusViewModel::touchCheckoutNit,
                     onCheckoutBusinessNameTouched =
                         versusViewModel::touchCheckoutBusinessName,
+                    onConfirmOrder = versusViewModel::confirmOrder,
 
                     onFavoriteClick = versusViewModel::toggleFavorite,
                     onQueryChange = versusViewModel::updateQuery,

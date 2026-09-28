@@ -3,6 +3,7 @@ package gt.uvg.lab09.viewModel
 import gt.uvg.lab09.model.Product
 import gt.uvg.lab09.model.Profile
 import gt.uvg.lab09.model.OrderLine
+import gt.uvg.lab09.model.OrderReceipt
 
 data class OrderFeedback(
     val message: String,
@@ -19,5 +20,6 @@ data class VersusUiState(
     val orderLineSubtotalsMinorUnits: Map<Int, Long> = emptyMap(),
     val orderUnitCount: Int = 0,
     val orderTotalMinorUnits: Long = 0L,
-    val orderFeedback: OrderFeedback? = null
+    val orderFeedback: OrderFeedback? = null,
+    val latestReceipt: OrderReceipt? = null
 )
