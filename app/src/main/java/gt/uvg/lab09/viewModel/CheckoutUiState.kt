@@ -2,9 +2,9 @@ package gt.uvg.lab09.viewModel
 
 import gt.uvg.lab09.model.BillingType
 import gt.uvg.lab09.model.PaymentMethod
+import gt.uvg.lab09.validation.isCheckoutValid
 
 data class CheckoutUiState(
-    //Productos, nombre completo, numero de telefono
     val name: String = "",
     val number: String = "",
     val billingType: BillingType = BillingType.CONSUMIDOR_FINAL,
@@ -15,4 +15,13 @@ data class CheckoutUiState(
     val numberIsTouched: Boolean = false,
     val nitIsTouched: Boolean = false,
     val businessNameIsTouched: Boolean = false
-)
+) {
+    val isFormValid: Boolean
+        get() = isCheckoutValid(
+            name = name,
+            number = number,
+            billingType = billingType,
+            nit = nit,
+            businessName = businessName
+        )
+}

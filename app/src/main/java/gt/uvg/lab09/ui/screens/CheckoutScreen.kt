@@ -43,17 +43,18 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import gt.uvg.lab09.model.BillingType
 import gt.uvg.lab09.model.PaymentMethod
-import gt.uvg.lab09.validation.isCheckoutValid
 import gt.uvg.lab09.validation.validateBusinessName
 import gt.uvg.lab09.validation.validateName
 import gt.uvg.lab09.validation.validateNit
 import gt.uvg.lab09.validation.validateNumber
 import gt.uvg.lab09.viewModel.CheckoutUiState
+import androidx.compose.foundation.layout.imePadding
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CheckoutScreen(
     uiState: CheckoutUiState,
+    isConfirmEnabled: Boolean,
     onNameChange: (String) -> Unit,
     onNumberChange: (String) -> Unit,
     onNitChange: (String) -> Unit,
@@ -82,13 +83,7 @@ fun CheckoutScreen(
         mutableStateOf(false)
     }
 
-    var nitHadFocus by remember {
-        mutableStateOf(false)
-    }
 
-    var businessNameHadFocus by remember {
-        mutableStateOf(false)
-    }
 
     val nameError =
         if (uiState.nameIsTouched) {
@@ -124,13 +119,6 @@ fun CheckoutScreen(
             null
         }
 
-    val checkoutIsValid = isCheckoutValid(
-        name = uiState.name,
-        number = uiState.number,
-        billingType = uiState.billingType,
-        nit = uiState.nit,
-        businessName = uiState.businessName
-    )
 
     Scaffold(
         topBar = {
@@ -153,6 +141,7 @@ fun CheckoutScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -302,6 +291,13 @@ fun CheckoutScreen(
                     verticalArrangement =
                         Arrangement.spacedBy(16.dp)
                 ) {
+                    var nitHadFocus by remember {
+                        mutableStateOf(false)
+                    }
+
+                    var businessNameHadFocus by remember {
+                        mutableStateOf(false)
+                    }
 
                     OutlinedTextField(
                         value = uiState.nit,
@@ -429,7 +425,7 @@ fun CheckoutScreen(
 
             Button(
                 onClick = onConfirmClick,
-                enabled = checkoutIsValid,
+                enabled = isConfirmEnabled,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Confirmar pedido")

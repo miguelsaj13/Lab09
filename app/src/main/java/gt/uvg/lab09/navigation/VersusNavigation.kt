@@ -44,6 +44,7 @@ private val backTransition: ContentTransform =
 fun VersusNavigation(
     uiState: VersusUiState,
     checkoutUiState: CheckoutUiState,
+    isConfirmEnabled: Boolean,
 
     onCheckoutNameChange: (String) -> Unit,
     onCheckoutNumberChange: (String) -> Unit,
@@ -164,7 +165,7 @@ fun VersusNavigation(
 
                 CheckoutScreen(
                     uiState = checkoutUiState,
-
+                    isConfirmEnabled = isConfirmEnabled,
                     onNameChange = onCheckoutNameChange,
                     onNumberChange = onCheckoutNumberChange,
                     onNitChange = onCheckoutNitChange,

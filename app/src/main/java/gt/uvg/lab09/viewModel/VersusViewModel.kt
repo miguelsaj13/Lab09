@@ -1,14 +1,16 @@
 package gt.uvg.lab09.viewModel
 
 import androidx.lifecycle.ViewModel
+import gt.uvg.lab09.model.BillingType
 import gt.uvg.lab09.model.OrderRejectionReason
 import gt.uvg.lab09.model.OrderUpdateResult
+import gt.uvg.lab09.model.PaymentMethod
 import gt.uvg.lab09.model.Product
 import gt.uvg.lab09.model.Profile
 import gt.uvg.lab09.model.addToOrder
+import gt.uvg.lab09.model.calculateLineSubtotalMinorUnits
 import gt.uvg.lab09.model.calculateOrderTotalMinorUnits
 import gt.uvg.lab09.model.calculateOrderUnitCount
-import gt.uvg.lab09.model.calculateLineSubtotalMinorUnits
 import gt.uvg.lab09.model.decreaseOrderLine
 import gt.uvg.lab09.model.removeOrderLine
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,11 +18,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlin.random.Random
-
-import gt.uvg.lab09.model.BillingType
-import gt.uvg.lab09.model.PaymentMethod
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 
 class VersusViewModel : ViewModel() {
 
@@ -404,17 +401,25 @@ class VersusViewModel : ViewModel() {
 
     fun touchCheckoutNit() {
         _checkoutUiState.update { currentState ->
-            currentState.copy(
-                nitIsTouched = true
-            )
+            if (currentState.billingType == BillingType.FACTURA_CON_NIT) {
+                currentState.copy(
+                    nitIsTouched = true
+                )
+            } else {
+                currentState
+            }
         }
     }
 
     fun touchCheckoutBusinessName() {
         _checkoutUiState.update { currentState ->
-            currentState.copy(
-                businessNameIsTouched = true
-            )
+            if (currentState.billingType == BillingType.FACTURA_CON_NIT) {
+                currentState.copy(
+                    businessNameIsTouched = true
+                )
+            } else {
+                currentState
+            }
         }
     }
 
