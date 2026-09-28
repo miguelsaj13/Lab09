@@ -17,6 +17,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlin.random.Random
 
+import gt.uvg.lab09.model.BillingType
+import gt.uvg.lab09.model.PaymentMethod
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+
 class VersusViewModel : ViewModel() {
 
     //Profiles que vienen del lab 09
@@ -315,6 +320,103 @@ class VersusViewModel : ViewModel() {
     )
 
     val uiState: StateFlow<VersusUiState> = _uiState.asStateFlow()
+
+    private val _checkoutUiState = MutableStateFlow(
+        CheckoutUiState()
+    )
+
+    val checkoutUiState: StateFlow<CheckoutUiState> =
+        _checkoutUiState.asStateFlow()
+
+    fun updateCheckoutName(name: String) {
+        _checkoutUiState.update { currentState ->
+            currentState.copy(
+                name = name
+            )
+        }
+    }
+
+    fun updateCheckoutNumber(number: String) {
+        _checkoutUiState.update { currentState ->
+            currentState.copy(
+                number = number
+            )
+        }
+    }
+
+    fun updateCheckoutNit(nit: String) {
+        _checkoutUiState.update { currentState ->
+            currentState.copy(
+                nit = nit
+            )
+        }
+    }
+
+    fun updateCheckoutBusinessName(businessName: String) {
+        _checkoutUiState.update { currentState ->
+            currentState.copy(
+                businessName = businessName
+            )
+        }
+    }
+
+    fun updateBillingType(billingType: BillingType) {
+        _checkoutUiState.update { currentState ->
+            if (billingType == BillingType.CONSUMIDOR_FINAL) {
+                currentState.copy(
+                    billingType = billingType,
+                    nit = "",
+                    businessName = "",
+                    nitIsTouched = false,
+                    businessNameIsTouched = false
+                )
+            } else {
+                currentState.copy(
+                    billingType = billingType
+                )
+            }
+        }
+    }
+
+    fun updatePaymentMethod(paymentMethod: PaymentMethod) {
+        _checkoutUiState.update { currentState ->
+            currentState.copy(
+                paymentMethod = paymentMethod
+            )
+        }
+    }
+
+    fun touchCheckoutName() {
+        _checkoutUiState.update { currentState ->
+            currentState.copy(
+                nameIsTouched = true
+            )
+        }
+    }
+
+    fun touchCheckoutNumber() {
+        _checkoutUiState.update { currentState ->
+            currentState.copy(
+                numberIsTouched = true
+            )
+        }
+    }
+
+    fun touchCheckoutNit() {
+        _checkoutUiState.update { currentState ->
+            currentState.copy(
+                nitIsTouched = true
+            )
+        }
+    }
+
+    fun touchCheckoutBusinessName() {
+        _checkoutUiState.update { currentState ->
+            currentState.copy(
+                businessNameIsTouched = true
+            )
+        }
+    }
 
     fun toggleFavorite(productId: Int) {
         _uiState.update { currentState ->

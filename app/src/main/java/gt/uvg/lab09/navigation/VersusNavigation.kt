@@ -16,6 +16,10 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import gt.uvg.lab09.viewModel.CheckoutUiState
+import gt.uvg.lab09.ui.screens.CheckoutScreen
+import gt.uvg.lab09.model.BillingType
+import gt.uvg.lab09.model.PaymentMethod
 
 private const val TRANSITION_DURATION_MS = 300
 
@@ -39,6 +43,21 @@ private val backTransition: ContentTransform =
 @Composable
 fun VersusNavigation(
     uiState: VersusUiState,
+    checkoutUiState: CheckoutUiState,
+
+    onCheckoutNameChange: (String) -> Unit,
+    onCheckoutNumberChange: (String) -> Unit,
+    onCheckoutNitChange: (String) -> Unit,
+    onCheckoutBusinessNameChange: (String) -> Unit,
+
+    onBillingTypeChange: (BillingType) -> Unit,
+    onPaymentMethodChange: (PaymentMethod) -> Unit,
+
+    onCheckoutNameTouched: () -> Unit,
+    onCheckoutNumberTouched: () -> Unit,
+    onCheckoutNitTouched: () -> Unit,
+    onCheckoutBusinessNameTouched: () -> Unit,
+
     onFavoriteClick: (Int) -> Unit,
     onQueryChange: (String) -> Unit,
     onAddToOrder: (Int, Int) -> Unit,
@@ -135,6 +154,35 @@ fun VersusNavigation(
                     onDecrease = onDecreaseOrderItem,
                     onRemove = onRemoveOrderItem,
                     onDismissFeedback = onDismissOrderFeedback,
+                    onBackClick = {
+                        backStack.removeLastOrNull()
+                    }
+                )
+            }
+
+            entry<VersusNavKey.Checkout> {
+
+                CheckoutScreen(
+                    uiState = checkoutUiState,
+
+                    onNameChange = onCheckoutNameChange,
+                    onNumberChange = onCheckoutNumberChange,
+                    onNitChange = onCheckoutNitChange,
+                    onBusinessNameChange = onCheckoutBusinessNameChange,
+
+                    onBillingTypeChange = onBillingTypeChange,
+                    onPaymentMethodChange = onPaymentMethodChange,
+
+                    onNameTouched = onCheckoutNameTouched,
+                    onNumberTouched = onCheckoutNumberTouched,
+                    onNitTouched = onCheckoutNitTouched,
+                    onBusinessNameTouched =
+                        onCheckoutBusinessNameTouched,
+
+                    onConfirmClick = {
+                        // Se implementará en un paso posterior.
+                    },
+
                     onBackClick = {
                         backStack.removeLastOrNull()
                     }
