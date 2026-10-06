@@ -362,7 +362,7 @@ class VersusViewModel : ViewModel() {
 
     fun updateBillingType(billingType: BillingType) {
         _checkoutUiState.update { currentState ->
-            if (billingType == BillingType.CONSUMIDOR_FINAL) {
+            if (billingType == BillingType.FINAL_CONSUMER) {
                 currentState.copy(
                     billingType = billingType,
                     nit = "",
@@ -404,7 +404,7 @@ class VersusViewModel : ViewModel() {
 
     fun touchCheckoutNit() {
         _checkoutUiState.update { currentState ->
-            if (currentState.billingType == BillingType.FACTURA_CON_NIT) {
+            if (currentState.billingType == BillingType.INVOICE_WITH_NIT) {
                 currentState.copy(
                     nitIsTouched = true
                 )
@@ -416,7 +416,7 @@ class VersusViewModel : ViewModel() {
 
     fun touchCheckoutBusinessName() {
         _checkoutUiState.update { currentState ->
-            if (currentState.billingType == BillingType.FACTURA_CON_NIT) {
+            if (currentState.billingType == BillingType.INVOICE_WITH_NIT) {
                 currentState.copy(
                     businessNameIsTouched = true
                 )
@@ -442,13 +442,13 @@ class VersusViewModel : ViewModel() {
             folio = "#ORD-${nextOrderNumber.toString().padStart(5, '0')}",
             customerName = checkoutState.name.trim(),
             billingType = checkoutState.billingType,
-            nit = if (checkoutState.billingType == BillingType.FACTURA_CON_NIT) {
+            nit = if (checkoutState.billingType == BillingType.INVOICE_WITH_NIT) {
                 checkoutState.nit.trim()
             } else {
                 null
             },
             businessName = if (
-                checkoutState.billingType == BillingType.FACTURA_CON_NIT
+                checkoutState.billingType == BillingType.INVOICE_WITH_NIT
             ) {
                 checkoutState.businessName.trim()
             } else {

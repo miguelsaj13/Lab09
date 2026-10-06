@@ -7,10 +7,10 @@ import gt.uvg.lab09.validation.isCheckoutValid
 data class CheckoutUiState(
     val name: String = "",
     val number: String = "",
-    val billingType: BillingType = BillingType.CONSUMIDOR_FINAL,
+    val billingType: BillingType = BillingType.FINAL_CONSUMER,
     val nit: String = "",
     val businessName: String = "",
-    val paymentMethod: PaymentMethod = PaymentMethod.EFECTIVO,
+    val paymentMethod: PaymentMethod = PaymentMethod.CASH_ON_DELIVERY,
     val nameIsTouched: Boolean = false,
     val numberIsTouched: Boolean = false,
     val nitIsTouched: Boolean = false,

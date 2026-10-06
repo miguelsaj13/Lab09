@@ -88,11 +88,11 @@ private fun ReceiptCard(receipt: OrderReceipt) {
             ReceiptRow(
                 label = "Facturación",
                 value = when (receipt.billingType) {
-                    BillingType.CONSUMIDOR_FINAL -> "CF (Consumidor Final)"
-                    BillingType.FACTURA_CON_NIT -> "Factura con NIT"
+                    BillingType.FINAL_CONSUMER -> "CF (Consumidor Final)"
+                    BillingType.INVOICE_WITH_NIT -> "Factura con NIT"
                 }
             )
-            if (receipt.billingType == BillingType.FACTURA_CON_NIT) {
+            if (receipt.billingType == BillingType.INVOICE_WITH_NIT) {
                 ReceiptRow(label = "NIT", value = receipt.nit.orEmpty())
                 ReceiptRow(
                     label = "Razón social",
@@ -102,8 +102,8 @@ private fun ReceiptCard(receipt: OrderReceipt) {
             ReceiptRow(
                 label = "Método de pago",
                 value = when (receipt.paymentMethod) {
-                    PaymentMethod.EFECTIVO -> "Efectivo contra entrega"
-                    PaymentMethod.TRANSFERENCIA_BANCARIA -> "Transferencia bancaria"
+                    PaymentMethod.CASH_ON_DELIVERY -> "Efectivo contra entrega"
+                    PaymentMethod.BANK_TRANSFER -> "Transferencia bancaria"
                 }
             )
             ReceiptRow(

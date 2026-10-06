@@ -62,7 +62,7 @@ fun isCheckoutValid(
         return false
     }
 
-    if (billingType == BillingType.FACTURA_CON_NIT) {
+    if (billingType == BillingType.INVOICE_WITH_NIT) {
         if (validateNit(nit) != null) {
             return false
         }

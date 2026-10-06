@@ -101,7 +101,7 @@ fun CheckoutScreen(
 
     val nitError =
         if (
-            uiState.billingType == BillingType.FACTURA_CON_NIT &&
+            uiState.billingType == BillingType.INVOICE_WITH_NIT &&
             uiState.nitIsTouched
         ) {
             validateNit(uiState.nit)
@@ -111,7 +111,7 @@ fun CheckoutScreen(
 
     val businessNameError =
         if (
-            uiState.billingType == BillingType.FACTURA_CON_NIT &&
+            uiState.billingType == BillingType.INVOICE_WITH_NIT &&
             uiState.businessNameIsTouched
         ) {
             validateBusinessName(uiState.businessName)
@@ -203,7 +203,7 @@ fun CheckoutScreen(
                     imeAction =
                         if (
                             uiState.billingType ==
-                            BillingType.FACTURA_CON_NIT
+                            BillingType.INVOICE_WITH_NIT
                         ) {
                             ImeAction.Next
                         } else {
@@ -214,7 +214,7 @@ fun CheckoutScreen(
                     onNext = {
                         if (
                             uiState.billingType ==
-                            BillingType.FACTURA_CON_NIT
+                            BillingType.INVOICE_WITH_NIT
                         ) {
                             nitFocusRequester.requestFocus()
                         }
@@ -246,7 +246,7 @@ fun CheckoutScreen(
                     text = "Consumidor final (CF)",
                     selected =
                         uiState.billingType ==
-                                BillingType.CONSUMIDOR_FINAL,
+                                BillingType.FINAL_CONSUMER,
                     onClick = {
                         clearFocusAndKeyboard(
                             focusManager = focusManager,
@@ -256,7 +256,7 @@ fun CheckoutScreen(
                         )
 
                         onBillingTypeChange(
-                            BillingType.CONSUMIDOR_FINAL
+                            BillingType.FINAL_CONSUMER
                         )
                     }
                 )
@@ -265,7 +265,7 @@ fun CheckoutScreen(
                     text = "Factura con NIT",
                     selected =
                         uiState.billingType ==
-                                BillingType.FACTURA_CON_NIT,
+                                BillingType.INVOICE_WITH_NIT,
                     onClick = {
                         clearFocusAndKeyboard(
                             focusManager = focusManager,
@@ -275,7 +275,7 @@ fun CheckoutScreen(
                         )
 
                         onBillingTypeChange(
-                            BillingType.FACTURA_CON_NIT
+                            BillingType.INVOICE_WITH_NIT
                         )
                     }
                 )
@@ -284,7 +284,7 @@ fun CheckoutScreen(
             AnimatedVisibility(
                 visible =
                     uiState.billingType ==
-                            BillingType.FACTURA_CON_NIT
+                            BillingType.INVOICE_WITH_NIT
             ) {
 
                 Column(
@@ -388,7 +388,7 @@ fun CheckoutScreen(
                     text = "Efectivo contra entrega",
                     selected =
                         uiState.paymentMethod ==
-                                PaymentMethod.EFECTIVO,
+                                PaymentMethod.CASH_ON_DELIVERY,
                     onClick = {
                         clearFocusAndKeyboard(
                             focusManager = focusManager,
@@ -398,7 +398,7 @@ fun CheckoutScreen(
                         )
 
                         onPaymentMethodChange(
-                            PaymentMethod.EFECTIVO
+                            PaymentMethod.CASH_ON_DELIVERY
                         )
                     }
                 )
@@ -407,7 +407,7 @@ fun CheckoutScreen(
                     text = "Transferencia bancaria",
                     selected =
                         uiState.paymentMethod ==
-                                PaymentMethod.TRANSFERENCIA_BANCARIA,
+                                PaymentMethod.BANK_TRANSFER,
                     onClick = {
                         clearFocusAndKeyboard(
                             focusManager = focusManager,
@@ -417,7 +417,7 @@ fun CheckoutScreen(
                         )
 
                         onPaymentMethodChange(
-                            PaymentMethod.TRANSFERENCIA_BANCARIA
+                            PaymentMethod.BANK_TRANSFER
                         )
                     }
                 )

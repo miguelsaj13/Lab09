@@ -1,11 +1,11 @@
 package gt.uvg.lab09.model
 
 enum class BillingType {
-    CONSUMIDOR_FINAL,
-    FACTURA_CON_NIT
+    FINAL_CONSUMER,
+    INVOICE_WITH_NIT
 }
 
 enum class PaymentMethod {
-    EFECTIVO,
-    TRANSFERENCIA_BANCARIA
+    CASH_ON_DELIVERY,
+    BANK_TRANSFER
 }
