@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TextButton
@@ -23,6 +24,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import gt.uvg.lab09.model.Product
 import kotlinx.coroutines.launch
 
@@ -34,6 +37,8 @@ private val FAB_CLEARANCE = 88.dp
 @Composable
 fun CatalogScreen(
     products: List<Product>,
+    isDarkTheme: Boolean,
+    onDarkThemeChange: (Boolean) -> Unit,
     totalCount: Int,
     query: String,
     favoriteIds: Set<Int>,
@@ -67,6 +72,13 @@ fun CatalogScreen(
                     Text("VERSUS")
                 },
                 actions = {
+                    Switch(
+                        checked = isDarkTheme,
+                        onCheckedChange = onDarkThemeChange,
+                        modifier = Modifier
+                            .heightIn(min = 48.dp)
+                            .semantics { contentDescription = "Tema oscuro" }
+                    )
                     TextButton(
                         onClick = onOrderClick,
                         modifier = Modifier.heightIn(min = 48.dp)

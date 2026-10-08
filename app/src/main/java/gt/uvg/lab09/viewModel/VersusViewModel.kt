@@ -1,9 +1,16 @@
 package gt.uvg.lab09.viewModel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import gt.uvg.lab09.data.FavoriteProductEntity
+import gt.uvg.lab09.data.OrderLineEntity
+import gt.uvg.lab09.data.StoreDatabase
+import gt.uvg.lab09.data.ThemePreferencesRepository
 import gt.uvg.lab09.model.BillingType
-import gt.uvg.lab09.model.OrderRejectionReason
+import gt.uvg.lab09.model.OrderLine
 import gt.uvg.lab09.model.OrderReceipt
+import gt.uvg.lab09.model.OrderRejectionReason
 import gt.uvg.lab09.model.OrderUpdateResult
 import gt.uvg.lab09.model.PaymentMethod
 import gt.uvg.lab09.model.Product
@@ -13,18 +20,63 @@ import gt.uvg.lab09.model.calculateLineSubtotalMinorUnits
 import gt.uvg.lab09.model.calculateOrderTotalMinorUnits
 import gt.uvg.lab09.model.calculateOrderUnitCount
 import gt.uvg.lab09.model.decreaseOrderLine
-import gt.uvg.lab09.model.removeOrderLine
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlin.random.Random
 
-class VersusViewModel : ViewModel() {
+
+private data class StoreMemoryState(
+    val products: List<Product>,
+    val visibleProducts: List<Product>,
+    val profiles: List<Profile>,
+    val query: String = "",
+    val orderFeedback: OrderFeedback? = null,
+    val latestReceipt: OrderReceipt? = null
+)
+
+
+private data class OrderSummary(
+    val lines: List<OrderLine>,
+    val subtotalsMinorUnits: Map<Int, Long>,
+    val unitCount: Int,
+    val totalMinorUnits: Long
+)
+
+private fun buildOrderSummary(orderLines: List<OrderLine>): OrderSummary = OrderSummary(
+    lines = orderLines,
+    subtotalsMinorUnits = orderLines.associate { line ->
+        line.product.id to calculateLineSubtotalMinorUnits(line)
+    },
+    unitCount = calculateOrderUnitCount(orderLines),
+    totalMinorUnits = calculateOrderTotalMinorUnits(orderLines)
+)
+
+class VersusViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val themePreferencesRepository = ThemePreferencesRepository(application)
+
+    val isDarkTheme: StateFlow<Boolean?> = themePreferencesRepository.darkTheme.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Eagerly,
+        initialValue = null
+    )
+
+    fun setDarkTheme(enabled: Boolean) {
+        viewModelScope.launch {
+            themePreferencesRepository.setDarkTheme(enabled)
+        }
+    }
 
     private var nextOrderNumber = 1
 
-    //Profiles que vienen del lab 09
+    private val storeDao = StoreDatabase.getInstance(application).storeDao()
+
     private val initialProfiles = listOf(
         Profile(
             id = 1,
@@ -76,7 +128,6 @@ class VersusViewModel : ViewModel() {
         )
     )
 
-    //Plantilla para describir una categoria de productos y que tenga sentido
     private data class ProductTemplate(
         val names: List<String>,
         val descriptions: List<String>,
@@ -86,15 +137,10 @@ class VersusViewModel : ViewModel() {
     )
 
     private val productTemplates = listOf(
-        //tennis de Nike
         ProductTemplate(
             names = listOf(
-                "Air Court",
-                "Zoom Flight",
-                "Air Max Sport",
-                "Court Vision",
-                "Precision Run",
-                "Street Runner"
+                "Air Court", "Zoom Flight", "Air Max Sport",
+                "Court Vision", "Precision Run", "Street Runner"
             ),
             descriptions = listOf(
                 "Tenis deportivos diseñados para baloncesto y entrenamiento.",
@@ -109,15 +155,10 @@ class VersusViewModel : ViewModel() {
             profileId = 1,
             priceRange = 900..1900
         ),
-
-        //Camisolas de nike
         ProductTemplate(
             names = listOf(
-                "Dri-FIT Training",
-                "Court Performance",
-                "Pro Training Tee",
-                "Sport Academy",
-                "Elite Match"
+                "Dri-FIT Training", "Court Performance", "Pro Training Tee",
+                "Sport Academy", "Elite Match"
             ),
             descriptions = listOf(
                 "Camisola deportiva diseñada para entrenamiento y actividad física.",
@@ -132,15 +173,10 @@ class VersusViewModel : ViewModel() {
             profileId = 1,
             priceRange = 300..750
         ),
-
-        //Shorts de nike
         ProductTemplate(
             names = listOf(
-                "Flex Training Shorts",
-                "Court Dry Shorts",
-                "Academy Sport Shorts",
-                "Performance Flex",
-                "Pro Training Shorts"
+                "Flex Training Shorts", "Court Dry Shorts", "Academy Sport Shorts",
+                "Performance Flex", "Pro Training Shorts"
             ),
             descriptions = listOf(
                 "Short deportivo para entrenamiento y uso cotidiano.",
@@ -155,15 +191,10 @@ class VersusViewModel : ViewModel() {
             profileId = 1,
             priceRange = 250..650
         ),
-
-        //Hoodies de nike
         ProductTemplate(
             names = listOf(
-                "Club Fleece",
-                "Sport Hoodie",
-                "Training Fleece",
-                "Academy Hoodie",
-                "Urban Sport Hoodie"
+                "Club Fleece", "Sport Hoodie", "Training Fleece",
+                "Academy Hoodie", "Urban Sport Hoodie"
             ),
             descriptions = listOf(
                 "Sudadera deportiva para clima fresco y uso diario.",
@@ -178,16 +209,10 @@ class VersusViewModel : ViewModel() {
             profileId = 1,
             priceRange = 500..1100
         ),
-
-        //Tennis de adidas
         ProductTemplate(
             names = listOf(
-                "Run Falcon",
-                "Court Boost",
-                "Street Classic",
-                "Response Runner",
-                "Training Bounce",
-                "Urban Sprint"
+                "Run Falcon", "Court Boost", "Street Classic",
+                "Response Runner", "Training Bounce", "Urban Sprint"
             ),
             descriptions = listOf(
                 "Calzado deportivo diseñado para correr y entrenar.",
@@ -202,15 +227,10 @@ class VersusViewModel : ViewModel() {
             profileId = 2,
             priceRange = 750..1700
         ),
-
-        //Camisolas de adidas
         ProductTemplate(
             names = listOf(
-                "Performance Jersey",
-                "Training Essentials",
-                "Match Ready",
-                "Aeroready Sport",
-                "Club Jersey"
+                "Performance Jersey", "Training Essentials", "Match Ready",
+                "Aeroready Sport", "Club Jersey"
             ),
             descriptions = listOf(
                 "Camisola deportiva para entrenamiento y competición.",
@@ -225,15 +245,10 @@ class VersusViewModel : ViewModel() {
             profileId = 2,
             priceRange = 300..800
         ),
-
-        //Pantalones de adidas
         ProductTemplate(
             names = listOf(
-                "Tiro Training Pants",
-                "Essentials Track Pants",
-                "Performance Jogger",
-                "Sport Training Pants",
-                "Aeroready Pants"
+                "Tiro Training Pants", "Essentials Track Pants", "Performance Jogger",
+                "Sport Training Pants", "Aeroready Pants"
             ),
             descriptions = listOf(
                 "Pantalón deportivo diseñado para entrenamiento y uso diario.",
@@ -248,15 +263,10 @@ class VersusViewModel : ViewModel() {
             profileId = 2,
             priceRange = 400..900
         ),
-
-        //Hoodies de adidas
         ProductTemplate(
             names = listOf(
-                "Tiro Track Jacket",
-                "Essentials Sport Jacket",
-                "Training Windbreaker",
-                "Performance Jacket",
-                "Club Track Jacket"
+                "Tiro Track Jacket", "Essentials Sport Jacket", "Training Windbreaker",
+                "Performance Jacket", "Club Track Jacket"
             ),
             descriptions = listOf(
                 "Chaqueta deportiva ligera para entrenamiento y uso cotidiano.",
@@ -273,26 +283,17 @@ class VersusViewModel : ViewModel() {
         )
     )
 
-    //Esta funcion genera los productos faltantes (497) para completar el catalogo.
     private fun generateProducts(): List<Product> {
         val random = Random(2026)
 
         val generatedProducts = (4..500).map { id ->
-
             val template = productTemplates.random(random)
-
             val name = template.names.random(random)
             val description = template.descriptions.random(random)
             val technicalDetails = template.technicalDetails.random(random)
-
             val generatedName = "$name $id"
-
             val price = template.priceRange.random(random).toDouble()
-
-            val stock = random.nextInt(
-                from = 0,
-                until = 11
-            )
+            val stock = random.nextInt(from = 0, until = 11)
 
             Product(
                 id = id,
@@ -308,18 +309,57 @@ class VersusViewModel : ViewModel() {
 
         return initialProducts + generatedProducts
     }
+
     private val products = generateProducts()
 
-    private val _uiState = MutableStateFlow(
-        VersusUiState(
+
+    private val memoryState = MutableStateFlow(
+        StoreMemoryState(
             products = products,
             visibleProducts = products,
-            profiles = initialProfiles,
-            favoriteIds = emptySet()
+            profiles = initialProfiles
         )
     )
 
-    val uiState: StateFlow<VersusUiState> = _uiState.asStateFlow()
+    val uiState: StateFlow<VersusUiState> = combine(
+        memoryState,
+        storeDao.observeFavorites(),
+        storeDao.observeOrderLines()
+    ) { memory, favoriteEntities, orderLineEntities ->
+
+        val favoriteIds = favoriteEntities
+            .map { entity -> entity.productId }
+            .toSet()
+
+        val orderLines = orderLineEntities.mapNotNull { entity ->
+            val product = memory.products.firstOrNull { it.id == entity.productId }
+            product?.let { OrderLine(product = it, quantity = entity.quantity) }
+        }
+
+        val orderSummary = buildOrderSummary(orderLines)
+
+        VersusUiState(
+            products = memory.products,
+            visibleProducts = memory.visibleProducts,
+            profiles = memory.profiles,
+            favoriteIds = favoriteIds,
+            query = memory.query,
+            orderLines = orderSummary.lines,
+            orderLineSubtotalsMinorUnits = orderSummary.subtotalsMinorUnits,
+            orderUnitCount = orderSummary.unitCount,
+            orderTotalMinorUnits = orderSummary.totalMinorUnits,
+            orderFeedback = memory.orderFeedback,
+            latestReceipt = memory.latestReceipt
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = VersusUiState(
+            products = products,
+            visibleProducts = products,
+            profiles = initialProfiles
+        )
+    )
 
     private val _checkoutUiState = MutableStateFlow(
         CheckoutUiState()
@@ -329,35 +369,19 @@ class VersusViewModel : ViewModel() {
         _checkoutUiState.asStateFlow()
 
     fun updateCheckoutName(name: String) {
-        _checkoutUiState.update { currentState ->
-            currentState.copy(
-                name = name
-            )
-        }
+        _checkoutUiState.update { currentState -> currentState.copy(name = name) }
     }
 
     fun updateCheckoutNumber(number: String) {
-        _checkoutUiState.update { currentState ->
-            currentState.copy(
-                number = number
-            )
-        }
+        _checkoutUiState.update { currentState -> currentState.copy(number = number) }
     }
 
     fun updateCheckoutNit(nit: String) {
-        _checkoutUiState.update { currentState ->
-            currentState.copy(
-                nit = nit
-            )
-        }
+        _checkoutUiState.update { currentState -> currentState.copy(nit = nit) }
     }
 
     fun updateCheckoutBusinessName(businessName: String) {
-        _checkoutUiState.update { currentState ->
-            currentState.copy(
-                businessName = businessName
-            )
-        }
+        _checkoutUiState.update { currentState -> currentState.copy(businessName = businessName) }
     }
 
     fun updateBillingType(billingType: BillingType) {
@@ -371,43 +395,27 @@ class VersusViewModel : ViewModel() {
                     businessNameIsTouched = false
                 )
             } else {
-                currentState.copy(
-                    billingType = billingType
-                )
+                currentState.copy(billingType = billingType)
             }
         }
     }
 
     fun updatePaymentMethod(paymentMethod: PaymentMethod) {
-        _checkoutUiState.update { currentState ->
-            currentState.copy(
-                paymentMethod = paymentMethod
-            )
-        }
+        _checkoutUiState.update { currentState -> currentState.copy(paymentMethod = paymentMethod) }
     }
 
     fun touchCheckoutName() {
-        _checkoutUiState.update { currentState ->
-            currentState.copy(
-                nameIsTouched = true
-            )
-        }
+        _checkoutUiState.update { currentState -> currentState.copy(nameIsTouched = true) }
     }
 
     fun touchCheckoutNumber() {
-        _checkoutUiState.update { currentState ->
-            currentState.copy(
-                numberIsTouched = true
-            )
-        }
+        _checkoutUiState.update { currentState -> currentState.copy(numberIsTouched = true) }
     }
 
     fun touchCheckoutNit() {
         _checkoutUiState.update { currentState ->
             if (currentState.billingType == BillingType.INVOICE_WITH_NIT) {
-                currentState.copy(
-                    nitIsTouched = true
-                )
+                currentState.copy(nitIsTouched = true)
             } else {
                 currentState
             }
@@ -417,24 +425,19 @@ class VersusViewModel : ViewModel() {
     fun touchCheckoutBusinessName() {
         _checkoutUiState.update { currentState ->
             if (currentState.billingType == BillingType.INVOICE_WITH_NIT) {
-                currentState.copy(
-                    businessNameIsTouched = true
-                )
+                currentState.copy(businessNameIsTouched = true)
             } else {
                 currentState
             }
         }
     }
 
-    /**
-     * Confirma únicamente si el formulario y el pedido siguen siendo válidos.
-     * El recibo se construye antes de vaciar el pedido para conservar su total.
-     */
+
     fun confirmOrder(): Boolean {
         val checkoutState = _checkoutUiState.value
-        val orderState = _uiState.value
+        val currentState = uiState.value
 
-        if (!checkoutState.isFormValid || orderState.orderUnitCount < 1) {
+        if (!checkoutState.isFormValid || currentState.orderUnitCount < 1) {
             return false
         }
 
@@ -447,49 +450,48 @@ class VersusViewModel : ViewModel() {
             } else {
                 null
             },
-            businessName = if (
-                checkoutState.billingType == BillingType.INVOICE_WITH_NIT
-            ) {
+            businessName = if (checkoutState.billingType == BillingType.INVOICE_WITH_NIT) {
                 checkoutState.businessName.trim()
             } else {
                 null
             },
             paymentMethod = checkoutState.paymentMethod,
-            totalMinorUnits = orderState.orderTotalMinorUnits
+            totalMinorUnits = currentState.orderTotalMinorUnits
         )
 
-        _uiState.value = orderState
-            .withOrderLines(lines = emptyList(), feedback = null)
-            .copy(latestReceipt = receipt)
+        memoryState.update { currentMemory ->
+            currentMemory.copy(
+                orderFeedback = null,
+                latestReceipt = receipt
+            )
+        }
         _checkoutUiState.value = CheckoutUiState()
         nextOrderNumber += 1
+
+        viewModelScope.launch {
+            storeDao.clearOrderLines()
+        }
 
         return true
     }
 
     fun toggleFavorite(productId: Int) {
-        _uiState.update { currentState ->
-
-            val currentFavorites = currentState.favoriteIds
-
-            val newFavorites =
-                if (productId in currentFavorites) {
-                    currentFavorites - productId
-                } else {
-                    currentFavorites + productId
-                }
-
-            currentState.copy(
-                favoriteIds = newFavorites
-            )
+        viewModelScope.launch {
+            val isFavorite = productId in uiState.value.favoriteIds
+            if (isFavorite) {
+                storeDao.deleteFavorite(productId)
+            } else {
+                storeDao.insertFavorite(FavoriteProductEntity(productId = productId))
+            }
         }
     }
-    fun updateQuery(newQuery: String){
-        _uiState.update { currentState ->
-            currentState.copy(
+
+    fun updateQuery(newQuery: String) {
+        memoryState.update { currentMemory ->
+            currentMemory.copy(
                 query = newQuery,
                 visibleProducts = filterProducts(
-                    products = currentState.products,
+                    products = currentMemory.products,
                     query = newQuery
                 )
             )
@@ -497,82 +499,88 @@ class VersusViewModel : ViewModel() {
     }
 
     fun addProductToOrder(productId: Int, increment: Int = 1) {
-        _uiState.update { currentState ->
+        viewModelScope.launch {
             when (
                 val result = addToOrder(
-                    catalog = currentState.products,
-                    currentLines = currentState.orderLines,
+                    catalog = products,
+                    currentLines = uiState.value.orderLines,
                     productId = productId,
                     increment = increment
                 )
             ) {
-                is OrderUpdateResult.Success -> currentState.withOrderLines(
-                    lines = result.lines,
-                    feedback = OrderFeedback(
-                        message = if (increment == 1) {
-                            "Producto agregado al pedido."
-                        } else {
-                            "$increment unidades agregadas al pedido."
-                        },
-                        isError = false
-                    )
-                )
+                is OrderUpdateResult.Success -> {
+                    val updatedLine = result.lines.first { it.product.id == productId }
 
-                is OrderUpdateResult.Rejected -> currentState.copy(
-                    orderFeedback = OrderFeedback(
-                        message = result.reason.toVisibleMessage(),
-                        isError = true
+                    storeDao.upsertOrderLine(
+                        OrderLineEntity(
+                            productId = updatedLine.product.id,
+                            quantity = updatedLine.quantity
+                        )
                     )
-                )
+
+                    memoryState.update { currentMemory ->
+                        currentMemory.copy(
+                            orderFeedback = OrderFeedback(
+                                message = if (increment == 1) {
+                                    "Producto agregado al pedido."
+                                } else {
+                                    "$increment unidades agregadas al pedido."
+                                },
+                                isError = false
+                            )
+                        )
+                    }
+                }
+
+                is OrderUpdateResult.Rejected -> {
+                    memoryState.update { currentMemory ->
+                        currentMemory.copy(
+                            orderFeedback = OrderFeedback(
+                                message = result.reason.toVisibleMessage(),
+                                isError = true
+                            )
+                        )
+                    }
+                }
             }
         }
     }
 
     fun decreaseProductInOrder(productId: Int) {
-        _uiState.update { currentState ->
+        viewModelScope.launch {
             val updatedLines = decreaseOrderLine(
-                currentLines = currentState.orderLines,
+                currentLines = uiState.value.orderLines,
                 productId = productId
             )
-            currentState.withOrderLines(
-                lines = updatedLines,
-                feedback = null
-            )
+
+            val remainingLine = updatedLines.firstOrNull { it.product.id == productId }
+
+            if (remainingLine != null) {
+                storeDao.upsertOrderLine(
+                    OrderLineEntity(
+                        productId = remainingLine.product.id,
+                        quantity = remainingLine.quantity
+                    )
+                )
+            } else {
+                storeDao.deleteOrderLine(productId)
+            }
+
+            memoryState.update { currentMemory -> currentMemory.copy(orderFeedback = null) }
         }
     }
 
     fun removeProductFromOrder(productId: Int) {
-        _uiState.update { currentState ->
-            val updatedLines = removeOrderLine(
-                currentLines = currentState.orderLines,
-                productId = productId
-            )
-            currentState.withOrderLines(
-                lines = updatedLines,
-                feedback = null
-            )
+        viewModelScope.launch {
+            storeDao.deleteOrderLine(productId)
+            memoryState.update { currentMemory -> currentMemory.copy(orderFeedback = null) }
         }
     }
 
     fun clearOrderFeedback() {
-        _uiState.update { currentState ->
-            currentState.copy(orderFeedback = null)
-        }
+        memoryState.update { currentMemory -> currentMemory.copy(orderFeedback = null) }
     }
 }
-
-private fun VersusUiState.withOrderLines(
-    lines: List<gt.uvg.lab09.model.OrderLine>,
-    feedback: OrderFeedback?
-): VersusUiState = copy(
-    orderLines = lines,
-    orderLineSubtotalsMinorUnits = lines.associate { line ->
-        line.product.id to calculateLineSubtotalMinorUnits(line)
-    },
-    orderUnitCount = calculateOrderUnitCount(lines),
-    orderTotalMinorUnits = calculateOrderTotalMinorUnits(lines),
-    orderFeedback = feedback
-)
 
 private fun OrderRejectionReason.toVisibleMessage(): String = when (this) {
     OrderRejectionReason.PRODUCT_NOT_FOUND ->
