@@ -23,10 +23,12 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
-            Lab09Theme {
+            val versusViewModel: VersusViewModel = viewModel()
+            val isDarkTheme by versusViewModel.isDarkTheme.collectAsStateWithLifecycle()
+            val darkTheme = isDarkTheme ?: return@setContent
 
-                val versusViewModel: VersusViewModel = viewModel()
-                
+            Lab09Theme(darkTheme = darkTheme) {
+
                 val versusState =
                     versusViewModel.uiState.collectAsStateWithLifecycle()
                 val checkoutState =
@@ -43,6 +45,8 @@ class MainActivity : ComponentActivity() {
                     uiState = versusState.value,
                     checkoutUiState = checkoutState.value,
                     isConfirmEnabled = isConfirmEnabled,
+                    isDarkTheme = darkTheme,
+                    onDarkThemeChange = versusViewModel::setDarkTheme,
 
                     onCheckoutNameChange =
                         versusViewModel::updateCheckoutName,

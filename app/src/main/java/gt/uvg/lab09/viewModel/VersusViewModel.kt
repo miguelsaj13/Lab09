@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import gt.uvg.lab09.data.FavoriteProductEntity
 import gt.uvg.lab09.data.OrderLineEntity
 import gt.uvg.lab09.data.StoreDatabase
+import gt.uvg.lab09.data.ThemePreferencesRepository
 import gt.uvg.lab09.model.BillingType
 import gt.uvg.lab09.model.OrderLine
 import gt.uvg.lab09.model.OrderReceipt
@@ -57,6 +58,20 @@ private fun buildOrderSummary(orderLines: List<OrderLine>): OrderSummary = Order
 )
 
 class VersusViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val themePreferencesRepository = ThemePreferencesRepository(application)
+
+    val isDarkTheme: StateFlow<Boolean?> = themePreferencesRepository.darkTheme.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Eagerly,
+        initialValue = null
+    )
+
+    fun setDarkTheme(enabled: Boolean) {
+        viewModelScope.launch {
+            themePreferencesRepository.setDarkTheme(enabled)
+        }
+    }
 
     private var nextOrderNumber = 1
 
