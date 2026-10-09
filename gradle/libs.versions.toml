@@ -8,11 +8,7 @@ lifecycleRuntimeKtx = "2.11.0"
 activityCompose = "1.13.0"
 kotlin = "2.2.10"
 composeBom = "2026.02.01"
-# Persistencia
-room3 = "3.0.3"
-sqlite = "2.7.1"
-datastore = "1.2.1"
-ksp = "2.2.10-2.0.2"
+
 #Versiones
 navigation3 = "1.1.7"
 kotlinxSerialization = "1.9.0"
@@ -52,15 +48,9 @@ androidx-navigation3-ui = { group = "androidx.navigation3", name = "navigation3-
 
 # Kotlin Serialization
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
-# Room 3
-androidx-room3-runtime = { group = "androidx.room3", name = "room3-runtime", version.ref = "room3" }
-androidx-room3-compiler = { group = "androidx.room3", name = "room3-compiler", version.ref = "room3" }
-# SQLite
-androidx-sqlite-framework = { group = "androidx.sqlite", name = "sqlite-framework", version.ref = "sqlite" }
-# DataStore
-androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
+
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
