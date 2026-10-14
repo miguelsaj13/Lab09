@@ -1,3 +1,4 @@
+
 package gt.uvg.lab09.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
@@ -7,7 +8,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -15,7 +18,9 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
@@ -43,17 +48,19 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import gt.uvg.lab09.model.BillingType
 import gt.uvg.lab09.model.PaymentMethod
+import gt.uvg.lab09.network.OrderDto
 import gt.uvg.lab09.validation.validateBusinessName
 import gt.uvg.lab09.validation.validateName
 import gt.uvg.lab09.validation.validateNit
 import gt.uvg.lab09.validation.validateNumber
 import gt.uvg.lab09.viewModel.CheckoutUiState
-import androidx.compose.foundation.layout.imePadding
+import gt.uvg.lab09.viewModel.RemoteUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CheckoutScreen(
     uiState: CheckoutUiState,
+    confirmationState: RemoteUiState<OrderDto>,
     isConfirmEnabled: Boolean,
     onNameChange: (String) -> Unit,
     onNumberChange: (String) -> Unit,
@@ -82,8 +89,6 @@ fun CheckoutScreen(
     var numberHadFocus by remember {
         mutableStateOf(false)
     }
-
-
 
     val nameError =
         if (uiState.nameIsTouched) {
@@ -119,6 +124,7 @@ fun CheckoutScreen(
             null
         }
 
+    val isLoading = confirmationState == RemoteUiState.Loading
 
     Scaffold(
         topBar = {
@@ -128,7 +134,8 @@ fun CheckoutScreen(
                 },
                 navigationIcon = {
                     TextButton(
-                        onClick = onBackClick
+                        onClick = onBackClick,
+                        enabled = !isLoading
                     ) {
                         Text("Regresar")
                     }
@@ -180,7 +187,8 @@ fun CheckoutScreen(
                             onNameTouched()
                         }
                     },
-                singleLine = true
+                singleLine = true,
+                readOnly = isLoading
             )
 
             OutlinedTextField(
@@ -233,7 +241,8 @@ fun CheckoutScreen(
                             onNumberTouched()
                         }
                     },
-                singleLine = true
+                singleLine = true,
+                readOnly = isLoading
             )
 
             Text("Facturación *")
@@ -247,6 +256,7 @@ fun CheckoutScreen(
                     selected =
                         uiState.billingType ==
                                 BillingType.FINAL_CONSUMER,
+                    enabled = !isLoading,
                     onClick = {
                         clearFocusAndKeyboard(
                             focusManager = focusManager,
@@ -266,6 +276,7 @@ fun CheckoutScreen(
                     selected =
                         uiState.billingType ==
                                 BillingType.INVOICE_WITH_NIT,
+                    enabled = !isLoading,
                     onClick = {
                         clearFocusAndKeyboard(
                             focusManager = focusManager,
@@ -335,7 +346,8 @@ fun CheckoutScreen(
                                     onNitTouched()
                                 }
                             },
-                        singleLine = true
+                        singleLine = true,
+                        readOnly = isLoading
                     )
 
                     OutlinedTextField(
@@ -373,7 +385,8 @@ fun CheckoutScreen(
                                     onBusinessNameTouched()
                                 }
                             },
-                        singleLine = true
+                        singleLine = true,
+                        readOnly = isLoading
                     )
                 }
             }
@@ -389,6 +402,7 @@ fun CheckoutScreen(
                     selected =
                         uiState.paymentMethod ==
                                 PaymentMethod.CASH_ON_DELIVERY,
+                    enabled = !isLoading,
                     onClick = {
                         clearFocusAndKeyboard(
                             focusManager = focusManager,
@@ -408,6 +422,7 @@ fun CheckoutScreen(
                     selected =
                         uiState.paymentMethod ==
                                 PaymentMethod.BANK_TRANSFER,
+                    enabled = !isLoading,
                     onClick = {
                         clearFocusAndKeyboard(
                             focusManager = focusManager,
@@ -423,12 +438,35 @@ fun CheckoutScreen(
                 )
             }
 
+            if (confirmationState is RemoteUiState.Error) {
+                Text(
+                    text = confirmationState.message,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+
             Button(
                 onClick = onConfirmClick,
-                enabled = isConfirmEnabled,
-                modifier = Modifier.fillMaxWidth()
+                enabled = isConfirmEnabled && !isLoading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
             ) {
-                Text("Confirmar pedido")
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+
+                    Text(
+                        text = "Enviando pedido...",
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+                } else {
+                    Text("Confirmar pedido")
+                }
             }
         }
     }
@@ -438,6 +476,7 @@ fun CheckoutScreen(
 private fun BillingOption(
     text: String,
     selected: Boolean,
+    enabled: Boolean,
     onClick: () -> Unit
 ) {
     Row(
@@ -446,6 +485,7 @@ private fun BillingOption(
             .heightIn(min = 48.dp)
             .selectable(
                 selected = selected,
+                enabled = enabled,
                 onClick = onClick,
                 role = Role.RadioButton
             )
@@ -455,7 +495,8 @@ private fun BillingOption(
 
         RadioButton(
             selected = selected,
-            onClick = null
+            onClick = null,
+            enabled = enabled
         )
 
         Text(
@@ -469,6 +510,7 @@ private fun BillingOption(
 private fun PaymentOption(
     text: String,
     selected: Boolean,
+    enabled: Boolean,
     onClick: () -> Unit
 ) {
     Row(
@@ -477,6 +519,7 @@ private fun PaymentOption(
             .heightIn(min = 48.dp)
             .selectable(
                 selected = selected,
+                enabled = enabled,
                 onClick = onClick,
                 role = Role.RadioButton
             )
@@ -486,7 +529,8 @@ private fun PaymentOption(
 
         RadioButton(
             selected = selected,
-            onClick = null
+            onClick = null,
+            enabled = enabled
         )
 
         Text(

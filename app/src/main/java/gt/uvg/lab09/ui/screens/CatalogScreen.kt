@@ -1,3 +1,4 @@
+
 package gt.uvg.lab09.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
@@ -14,8 +15,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -42,7 +43,8 @@ fun CatalogScreen(
     onProductClick: (Int) -> Unit,
     onFavoriteClick: (Int) -> Unit,
     orderUnitCount: Int,
-    onOrderClick: () -> Unit
+    onOrderClick: () -> Unit,
+    onMyOrdersClick: () -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
 
@@ -67,6 +69,13 @@ fun CatalogScreen(
                     Text("VERSUS")
                 },
                 actions = {
+                    TextButton(
+                        onClick = onMyOrdersClick,
+                        modifier = Modifier.heightIn(min = 48.dp)
+                    ) {
+                        Text("Mis pedidos")
+                    }
+
                     TextButton(
                         onClick = onOrderClick,
                         modifier = Modifier.heightIn(min = 48.dp)
@@ -134,14 +143,12 @@ fun CatalogScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-
                     items(
                         items = products,
                         key = { product ->
                             product.id
                         }
                     ) { product ->
-
                         ProductCard(
                             product = product,
                             isFavorite = product.id in favoriteIds,

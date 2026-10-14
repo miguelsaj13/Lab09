@@ -1,6 +1,7 @@
 package gt.uvg.lab09.viewModel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import gt.uvg.lab09.model.BillingType
 import gt.uvg.lab09.model.OrderRejectionReason
 import gt.uvg.lab09.model.OrderReceipt
@@ -14,15 +15,48 @@ import gt.uvg.lab09.model.calculateOrderTotalMinorUnits
 import gt.uvg.lab09.model.calculateOrderUnitCount
 import gt.uvg.lab09.model.decreaseOrderLine
 import gt.uvg.lab09.model.removeOrderLine
+import gt.uvg.lab09.model.priceToMinorUnits
+import gt.uvg.lab09.network.OrderDto
+import gt.uvg.lab09.network.OrderLineDto
+import gt.uvg.lab09.network.RetrofitInstance
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
+import kotlinx.serialization.SerializationException
+import retrofit2.HttpException
+import java.io.IOException
 import kotlin.random.Random
 
 class VersusViewModel : ViewModel() {
 
-    private var nextOrderNumber = 1
+    private val ordersApi = RetrofitInstance.ordersApi
+
+    private val _confirmationState =
+        MutableStateFlow<RemoteUiState<OrderDto>>(
+            RemoteUiState.Idle
+        )
+
+    val confirmationState: StateFlow<RemoteUiState<OrderDto>> =
+        _confirmationState.asStateFlow()
+
+    private val _ordersState =
+        MutableStateFlow<RemoteUiState<List<OrderDto>>>(
+            RemoteUiState.Idle
+        )
+
+    val ordersState: StateFlow<RemoteUiState<List<OrderDto>>> =
+        _ordersState.asStateFlow()
+
+    private val _orderDetailState =
+        MutableStateFlow<RemoteUiState<OrderDto>>(
+            RemoteUiState.Idle
+        )
+
+    val orderDetailState: StateFlow<RemoteUiState<OrderDto>> =
+        _orderDetailState.asStateFlow()
 
     //Profiles que vienen del lab 09
     private val initialProfiles = listOf(
@@ -220,7 +254,7 @@ class VersusViewModel : ViewModel() {
             technicalDetails = listOf(
                 "Fabricada con tejido transpirable y tecnología de control de humedad.",
                 "Cuenta con fibras ligeras de secado rápido y ajuste deportivo.",
-                "Diseñada para facilitar la ventilación durante actividades de alta intensidad."
+                "Diseñada para facilitar la ventilación para actividades de alta intensidad."
             ),
             profileId = 2,
             priceRange = 300..800
@@ -261,7 +295,7 @@ class VersusViewModel : ViewModel() {
             descriptions = listOf(
                 "Chaqueta deportiva ligera para entrenamiento y uso cotidiano.",
                 "Chaqueta diseñada para proteger durante actividades al aire libre.",
-                "Prenda deportiva para calentamiento y clima fresco."
+                "Prenda de abrigo diseñada para calentamiento y clima fresco."
             ),
             technicalDetails = listOf(
                 "Fabricada con material ligero y cierre frontal completo.",
@@ -308,6 +342,7 @@ class VersusViewModel : ViewModel() {
 
         return initialProducts + generatedProducts
     }
+
     private val products = generateProducts()
 
     private val _uiState = MutableStateFlow(
@@ -426,45 +461,200 @@ class VersusViewModel : ViewModel() {
         }
     }
 
-    /**
-     * Confirma únicamente si el formulario y el pedido siguen siendo válidos.
-     * El recibo se construye antes de vaciar el pedido para conservar su total.
-     */
-    fun confirmOrder(): Boolean {
+    fun confirmOrder() {
+        if (_confirmationState.value == RemoteUiState.Loading) {
+            return
+        }
+
         val checkoutState = _checkoutUiState.value
         val orderState = _uiState.value
 
         if (!checkoutState.isFormValid || orderState.orderUnitCount < 1) {
-            return false
+            _confirmationState.value = RemoteUiState.Error(
+                "Completa el formulario y agrega productos al pedido."
+            )
+            return
         }
 
-        val receipt = OrderReceipt(
-            folio = "#ORD-${nextOrderNumber.toString().padStart(5, '0')}",
+        val orderDto = OrderDto(
             customerName = checkoutState.name.trim(),
-            billingType = checkoutState.billingType,
-            nit = if (checkoutState.billingType == BillingType.INVOICE_WITH_NIT) {
-                checkoutState.nit.trim()
-            } else {
-                null
+            billingType = checkoutState.billingType.name,
+            paymentMethod = checkoutState.paymentMethod.name,
+            lines = orderState.orderLines.map { line ->
+                OrderLineDto(
+                    productId = line.product.id,
+                    productName = line.product.name,
+                    quantity = line.quantity,
+                    unitPriceMinorUnits = priceToMinorUnits(line.product.price)
+                )
             },
-            businessName = if (
-                checkoutState.billingType == BillingType.INVOICE_WITH_NIT
-            ) {
-                checkoutState.businessName.trim()
-            } else {
-                null
-            },
-            paymentMethod = checkoutState.paymentMethod,
             totalMinorUnits = orderState.orderTotalMinorUnits
         )
 
-        _uiState.value = orderState
-            .withOrderLines(lines = emptyList(), feedback = null)
-            .copy(latestReceipt = receipt)
-        _checkoutUiState.value = CheckoutUiState()
-        nextOrderNumber += 1
+        _confirmationState.value = RemoteUiState.Loading
 
-        return true
+        viewModelScope.launch {
+            try {
+                val savedOrder = ordersApi.createOrder(orderDto)
+
+                val receipt = OrderReceipt(
+                    folio = savedOrder.id,
+                    customerName = savedOrder.customerName,
+                    billingType = checkoutState.billingType,
+                    nit = if (
+                        checkoutState.billingType == BillingType.INVOICE_WITH_NIT
+                    ) {
+                        checkoutState.nit.trim()
+                    } else {
+                        null
+                    },
+                    businessName = if (
+                        checkoutState.billingType == BillingType.INVOICE_WITH_NIT
+                    ) {
+                        checkoutState.businessName.trim()
+                    } else {
+                        null
+                    },
+                    paymentMethod = checkoutState.paymentMethod,
+                    totalMinorUnits = savedOrder.totalMinorUnits
+                )
+
+                _uiState.update { currentState ->
+                    currentState
+                        .withOrderLines(
+                            lines = emptyList(),
+                            feedback = null
+                        )
+                        .copy(latestReceipt = receipt)
+                }
+
+                _checkoutUiState.value = CheckoutUiState()
+
+                _confirmationState.value =
+                    RemoteUiState.Success(savedOrder)
+
+            } catch (exception: CancellationException) {
+                throw exception
+
+            } catch (exception: IOException) {
+                _confirmationState.value = RemoteUiState.Error(
+                    "No se pudo conectar con el servidor. Revisa tu conexión e inténtalo nuevamente."
+                )
+
+            } catch (exception: HttpException) {
+                _confirmationState.value = RemoteUiState.Error(
+                    "El servidor no pudo procesar el pedido. Inténtalo nuevamente."
+                )
+
+            } catch (exception: SerializationException) {
+                _confirmationState.value = RemoteUiState.Error(
+                    "No pudimos procesar la respuesta del servidor."
+                )
+
+            } catch (exception: Exception) {
+                _confirmationState.value = RemoteUiState.Error(
+                    "Ocurrió un error inesperado. Inténtalo nuevamente."
+                )
+            }
+        }
+    }
+
+    fun resetConfirmationState() {
+        if (_confirmationState.value != RemoteUiState.Loading) {
+            _confirmationState.value = RemoteUiState.Idle
+        }
+    }
+
+
+    fun loadOrders() {
+        if (_ordersState.value == RemoteUiState.Loading) {
+            return
+        }
+
+        _ordersState.value = RemoteUiState.Loading
+
+        viewModelScope.launch {
+            try {
+                val orders = ordersApi.getOrders()
+                    .sortedWith(
+                        compareByDescending<OrderDto> { it.createdAt }
+                            .thenByDescending { it.id.toLongOrNull() ?: 0L }
+                    )
+
+                _ordersState.value =
+                    if (orders.isEmpty()) {
+                        RemoteUiState.Empty
+                    } else {
+                        RemoteUiState.Success(orders)
+                    }
+
+            } catch (exception: CancellationException) {
+                throw exception
+
+            } catch (exception: IOException) {
+                _ordersState.value = RemoteUiState.Error(
+                    "No se pudo conectar con el servidor. Revisa tu conexión e inténtalo nuevamente."
+                )
+
+            } catch (exception: HttpException) {
+                _ordersState.value = RemoteUiState.Error(
+                    "No se pudieron consultar los pedidos. Inténtalo nuevamente."
+                )
+
+            } catch (exception: SerializationException) {
+                _ordersState.value = RemoteUiState.Error(
+                    "No pudimos procesar los pedidos recibidos."
+                )
+
+            } catch (exception: Exception) {
+                _ordersState.value = RemoteUiState.Error(
+                    "Ocurrió un error inesperado al consultar los pedidos."
+                )
+            }
+        }
+    }
+
+
+    fun loadOrderDetail(orderId: String) {
+        if (_orderDetailState.value == RemoteUiState.Loading) {
+            return
+        }
+
+        _orderDetailState.value = RemoteUiState.Loading
+
+        viewModelScope.launch {
+            try {
+                val order = ordersApi.getOrderById(orderId)
+                _orderDetailState.value = RemoteUiState.Success(order)
+
+            } catch (exception: CancellationException) {
+                throw exception
+
+            } catch (exception: IOException) {
+                _orderDetailState.value = RemoteUiState.Error(
+                    "No se pudo conectar con el servidor. Revisa tu conexión e inténtalo nuevamente."
+                )
+
+            } catch (exception: HttpException) {
+                _orderDetailState.value = RemoteUiState.Error(
+                    if (exception.code() == 404) {
+                        "Este pedido ya no existe en el servidor."
+                    } else {
+                        "No se pudo consultar el pedido. Inténtalo nuevamente."
+                    }
+                )
+
+            } catch (exception: SerializationException) {
+                _orderDetailState.value = RemoteUiState.Error(
+                    "No pudimos procesar la información del pedido."
+                )
+
+            } catch (exception: Exception) {
+                _orderDetailState.value = RemoteUiState.Error(
+                    "Ocurrió un error inesperado al consultar el pedido."
+                )
+            }
+        }
     }
 
     fun toggleFavorite(productId: Int) {
@@ -484,7 +674,8 @@ class VersusViewModel : ViewModel() {
             )
         }
     }
-    fun updateQuery(newQuery: String){
+
+    fun updateQuery(newQuery: String) {
         _uiState.update { currentState ->
             currentState.copy(
                 query = newQuery,

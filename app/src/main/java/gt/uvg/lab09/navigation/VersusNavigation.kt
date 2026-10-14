@@ -1,26 +1,31 @@
 package gt.uvg.lab09.navigation
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.runtime.Composable
-import androidx.navigation3.runtime.entryProvider
-import androidx.navigation3.runtime.rememberNavBackStack
-import androidx.navigation3.ui.NavDisplay
-import gt.uvg.lab09.ui.screens.CatalogScreen
-import gt.uvg.lab09.ui.screens.DetailScreen
-import gt.uvg.lab09.ui.screens.OrderScreen
-import gt.uvg.lab09.ui.screens.ProfileScreen
-import gt.uvg.lab09.viewModel.VersusUiState
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
-import gt.uvg.lab09.viewModel.CheckoutUiState
-import gt.uvg.lab09.ui.screens.CheckoutScreen
-import gt.uvg.lab09.ui.screens.ConfirmationScreen
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.ui.NavDisplay
 import gt.uvg.lab09.model.BillingType
 import gt.uvg.lab09.model.PaymentMethod
+import gt.uvg.lab09.network.OrderDto
+import gt.uvg.lab09.ui.screens.CatalogScreen
+import gt.uvg.lab09.ui.screens.CheckoutScreen
+import gt.uvg.lab09.ui.screens.ConfirmationScreen
+import gt.uvg.lab09.ui.screens.DetailScreen
+import gt.uvg.lab09.ui.screens.MyOrdersScreen
+import gt.uvg.lab09.ui.screens.OrderDetailScreen
+import gt.uvg.lab09.ui.screens.OrderScreen
+import gt.uvg.lab09.ui.screens.ProfileScreen
+import gt.uvg.lab09.viewModel.CheckoutUiState
+import gt.uvg.lab09.viewModel.RemoteUiState
+import gt.uvg.lab09.viewModel.VersusUiState
 
 private const val TRANSITION_DURATION_MS = 300
 
@@ -41,10 +46,14 @@ private val backTransition: ContentTransform =
         animationSpec = tween(TRANSITION_DURATION_MS),
         targetOffsetX = { fullWidth -> fullWidth }
     )
+
 @Composable
 fun VersusNavigation(
     uiState: VersusUiState,
     checkoutUiState: CheckoutUiState,
+    confirmationState: RemoteUiState<OrderDto>,
+    ordersState: RemoteUiState<List<OrderDto>>,
+    orderDetailState: RemoteUiState<OrderDto>,
     isConfirmEnabled: Boolean,
 
     onCheckoutNameChange: (String) -> Unit,
@@ -59,7 +68,11 @@ fun VersusNavigation(
     onCheckoutNumberTouched: () -> Unit,
     onCheckoutNitTouched: () -> Unit,
     onCheckoutBusinessNameTouched: () -> Unit,
-    onConfirmOrder: () -> Boolean,
+    onConfirmOrder: () -> Unit,
+    onResetConfirmationState: () -> Unit,
+
+    onLoadOrders: () -> Unit,
+    onLoadOrderDetail: (String) -> Unit,
 
     onFavoriteClick: (Int) -> Unit,
     onQueryChange: (String) -> Unit,
@@ -70,11 +83,32 @@ fun VersusNavigation(
 ) {
     val backStack = rememberNavBackStack(VersusNavKey.Catalog)
     val gridState = rememberLazyGridState()
+
     val returnToCatalog: () -> Unit = {
         backStack.clear()
         backStack.add(VersusNavKey.Catalog)
     }
+
+    LaunchedEffect(confirmationState) {
+        if (
+            confirmationState is RemoteUiState.Success &&
+            backStack.lastOrNull() == VersusNavKey.Checkout
+        ) {
+            backStack.add(VersusNavKey.Confirmation)
+        }
+    }
+
+    val isSendingOrder =
+        confirmationState == RemoteUiState.Loading
+
     BackHandler(enabled = backStack.size > 1) {
+        if (
+            backStack.lastOrNull() == VersusNavKey.Checkout &&
+            isSendingOrder
+        ) {
+            return@BackHandler
+        }
+
         if (backStack.lastOrNull() == VersusNavKey.Confirmation) {
             returnToCatalog()
         } else {
@@ -106,13 +140,18 @@ fun VersusNavigation(
                     onOrderClick = {
                         onDismissOrderFeedback()
                         backStack.add(VersusNavKey.Order)
+                    },
+                    onMyOrdersClick = {
+                        onLoadOrders()
+                        backStack.add(VersusNavKey.MyOrders)
                     }
                 )
             }
 
             entry<VersusNavKey.Detail> { key ->
-
-                val product = uiState.products.firstOrNull { it.id == key.productId }
+                val product = uiState.products.firstOrNull {
+                    it.id == key.productId
+                }
 
                 if (product != null) {
                     DetailScreen(
@@ -141,7 +180,9 @@ fun VersusNavigation(
             }
 
             entry<VersusNavKey.ProfileRoute> { key ->
-                val profile = uiState.profiles.firstOrNull { it.id == key.profileId}
+                val profile = uiState.profiles.firstOrNull {
+                    it.id == key.profileId
+                }
 
                 if (profile != null) {
                     ProfileScreen(
@@ -167,6 +208,7 @@ fun VersusNavigation(
                     onRemove = onRemoveOrderItem,
                     onDismissFeedback = onDismissOrderFeedback,
                     onCheckoutClick = {
+                        onResetConfirmationState()
                         backStack.add(VersusNavKey.Checkout)
                     },
                     onBackClick = {
@@ -176,10 +218,11 @@ fun VersusNavigation(
             }
 
             entry<VersusNavKey.Checkout> {
-
                 CheckoutScreen(
                     uiState = checkoutUiState,
+                    confirmationState = confirmationState,
                     isConfirmEnabled = isConfirmEnabled,
+
                     onNameChange = onCheckoutNameChange,
                     onNumberChange = onCheckoutNumberChange,
                     onNitChange = onCheckoutNitChange,
@@ -191,17 +234,14 @@ fun VersusNavigation(
                     onNameTouched = onCheckoutNameTouched,
                     onNumberTouched = onCheckoutNumberTouched,
                     onNitTouched = onCheckoutNitTouched,
-                    onBusinessNameTouched =
-                        onCheckoutBusinessNameTouched,
+                    onBusinessNameTouched = onCheckoutBusinessNameTouched,
 
-                    onConfirmClick = {
-                        if (onConfirmOrder()) {
-                            backStack.add(VersusNavKey.Confirmation)
-                        }
-                    },
+                    onConfirmClick = onConfirmOrder,
 
                     onBackClick = {
-                        backStack.removeLastOrNull()
+                        if (!isSendingOrder) {
+                            backStack.removeLastOrNull()
+                        }
                     }
                 )
             }
@@ -210,6 +250,34 @@ fun VersusNavigation(
                 ConfirmationScreen(
                     receipt = uiState.latestReceipt,
                     onCatalogClick = returnToCatalog
+                )
+            }
+
+            entry<VersusNavKey.MyOrders> {
+                MyOrdersScreen(
+                    ordersState = ordersState,
+                    onOrderClick = { orderId ->
+                        onLoadOrderDetail(orderId)
+                        backStack.add(
+                            VersusNavKey.OrderDetail(orderId)
+                        )
+                    },
+                    onRetryClick = onLoadOrders,
+                    onBackClick = {
+                        backStack.removeLastOrNull()
+                    }
+                )
+            }
+
+            entry<VersusNavKey.OrderDetail> { key ->
+                OrderDetailScreen(
+                    orderState = orderDetailState,
+                    onRetryClick = {
+                        onLoadOrderDetail(key.orderId)
+                    },
+                    onBackClick = {
+                        backStack.removeLastOrNull()
+                    }
                 )
             }
         }
