@@ -1,15 +1,17 @@
+
 package gt.uvg.lab09.navigation
 
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed interface VersusNavKey: NavKey{
-    @Serializable
-    data object Catalog: VersusNavKey
+sealed interface VersusNavKey : NavKey {
 
     @Serializable
-    data class Detail(val productId: Int): VersusNavKey
+    data object Catalog : VersusNavKey
+
+    @Serializable
+    data class Detail(val productId: Int) : VersusNavKey
 
     @Serializable
     data class ProfileRoute(val profileId: Int) : VersusNavKey
@@ -22,4 +24,10 @@ sealed interface VersusNavKey: NavKey{
 
     @Serializable
     data object Confirmation : VersusNavKey
+
+    @Serializable
+    data object MyOrders : VersusNavKey
+
+    @Serializable
+    data class OrderDetail(val orderId: String) : VersusNavKey
 }
