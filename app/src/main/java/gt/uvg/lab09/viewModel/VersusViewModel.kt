@@ -1,14 +1,16 @@
 package gt.uvg.lab09.viewModel
 
 import androidx.lifecycle.ViewModel
+import gt.uvg.lab09.model.BillingType
 import gt.uvg.lab09.model.OrderRejectionReason
 import gt.uvg.lab09.model.OrderUpdateResult
+import gt.uvg.lab09.model.PaymentMethod
 import gt.uvg.lab09.model.Product
 import gt.uvg.lab09.model.Profile
 import gt.uvg.lab09.model.addToOrder
+import gt.uvg.lab09.model.calculateLineSubtotalMinorUnits
 import gt.uvg.lab09.model.calculateOrderTotalMinorUnits
 import gt.uvg.lab09.model.calculateOrderUnitCount
-import gt.uvg.lab09.model.calculateLineSubtotalMinorUnits
 import gt.uvg.lab09.model.decreaseOrderLine
 import gt.uvg.lab09.model.removeOrderLine
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -315,6 +317,111 @@ class VersusViewModel : ViewModel() {
     )
 
     val uiState: StateFlow<VersusUiState> = _uiState.asStateFlow()
+
+    private val _checkoutUiState = MutableStateFlow(
+        CheckoutUiState()
+    )
+
+    val checkoutUiState: StateFlow<CheckoutUiState> =
+        _checkoutUiState.asStateFlow()
+
+    fun updateCheckoutName(name: String) {
+        _checkoutUiState.update { currentState ->
+            currentState.copy(
+                name = name
+            )
+        }
+    }
+
+    fun updateCheckoutNumber(number: String) {
+        _checkoutUiState.update { currentState ->
+            currentState.copy(
+                number = number
+            )
+        }
+    }
+
+    fun updateCheckoutNit(nit: String) {
+        _checkoutUiState.update { currentState ->
+            currentState.copy(
+                nit = nit
+            )
+        }
+    }
+
+    fun updateCheckoutBusinessName(businessName: String) {
+        _checkoutUiState.update { currentState ->
+            currentState.copy(
+                businessName = businessName
+            )
+        }
+    }
+
+    fun updateBillingType(billingType: BillingType) {
+        _checkoutUiState.update { currentState ->
+            if (billingType == BillingType.CONSUMIDOR_FINAL) {
+                currentState.copy(
+                    billingType = billingType,
+                    nit = "",
+                    businessName = "",
+                    nitIsTouched = false,
+                    businessNameIsTouched = false
+                )
+            } else {
+                currentState.copy(
+                    billingType = billingType
+                )
+            }
+        }
+    }
+
+    fun updatePaymentMethod(paymentMethod: PaymentMethod) {
+        _checkoutUiState.update { currentState ->
+            currentState.copy(
+                paymentMethod = paymentMethod
+            )
+        }
+    }
+
+    fun touchCheckoutName() {
+        _checkoutUiState.update { currentState ->
+            currentState.copy(
+                nameIsTouched = true
+            )
+        }
+    }
+
+    fun touchCheckoutNumber() {
+        _checkoutUiState.update { currentState ->
+            currentState.copy(
+                numberIsTouched = true
+            )
+        }
+    }
+
+    fun touchCheckoutNit() {
+        _checkoutUiState.update { currentState ->
+            if (currentState.billingType == BillingType.FACTURA_CON_NIT) {
+                currentState.copy(
+                    nitIsTouched = true
+                )
+            } else {
+                currentState
+            }
+        }
+    }
+
+    fun touchCheckoutBusinessName() {
+        _checkoutUiState.update { currentState ->
+            if (currentState.billingType == BillingType.FACTURA_CON_NIT) {
+                currentState.copy(
+                    businessNameIsTouched = true
+                )
+            } else {
+                currentState
+            }
+        }
+    }
 
     fun toggleFavorite(productId: Int) {
         _uiState.update { currentState ->
