@@ -46,8 +46,6 @@ fun VersusNavigation(
     uiState: VersusUiState,
     checkoutUiState: CheckoutUiState,
     isConfirmEnabled: Boolean,
-    isDarkTheme: Boolean,
-    onDarkThemeChange: (Boolean) -> Unit,
 
     onCheckoutNameChange: (String) -> Unit,
     onCheckoutNumberChange: (String) -> Unit,
@@ -94,8 +92,6 @@ fun VersusNavigation(
             entry<VersusNavKey.Catalog> {
                 CatalogScreen(
                     products = uiState.visibleProducts,
-                    isDarkTheme = isDarkTheme,
-                    onDarkThemeChange = onDarkThemeChange,
                     totalCount = uiState.products.size,
                     query = uiState.query,
                     favoriteIds = uiState.favoriteIds,
