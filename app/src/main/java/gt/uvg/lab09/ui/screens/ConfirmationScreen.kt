@@ -28,7 +28,8 @@ import gt.uvg.lab09.model.formatQuetzales
 @Composable
 fun ConfirmationScreen(
     receipt: OrderReceipt?,
-    onCatalogClick: () -> Unit
+    onCatalogClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Scaffold { innerPadding ->
         Column(

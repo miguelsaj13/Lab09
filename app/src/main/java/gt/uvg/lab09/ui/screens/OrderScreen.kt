@@ -12,8 +12,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -44,9 +44,12 @@ fun OrderScreen(
     onRemove: (Int) -> Unit,
     onDismissFeedback: () -> Unit,
     onCheckoutClick: () -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    isBusy: Boolean,
+    modifier: Modifier = Modifier
 ) {
     Scaffold(
+        modifier = modifier,
         topBar = {
             TopAppBar(
                 title = {
@@ -134,6 +137,7 @@ fun OrderScreen(
                     ) { line ->
 
                         OrderLineCard(
+                            enabled = !isBusy,
                             line = line,
                             subtotalMinorUnits =
                                 lineSubtotalsMinorUnits[line.product.id] ?: 0L,
@@ -178,7 +182,7 @@ fun OrderScreen(
 
             Button(
                 onClick = onCheckoutClick,
-                enabled = orderUnitCount > 0,
+                enabled = orderUnitCount > 0 && !isBusy,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
@@ -238,10 +242,12 @@ private fun OrderLineCard(
     subtotalMinorUnits: Long,
     onIncrease: () -> Unit,
     onDecrease: () -> Unit,
-    onRemove: () -> Unit
+    onRemove: () -> Unit,
+    enabled: Boolean,
+    modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -269,6 +275,7 @@ private fun OrderLineCard(
 
                 TextButton(
                     onClick = onDecrease,
+                    enabled = enabled,
                     modifier = Modifier.heightIn(min = 48.dp)
                 ) {
                     Text("-")
@@ -281,7 +288,7 @@ private fun OrderLineCard(
 
                 TextButton(
                     onClick = onIncrease,
-                    enabled = line.quantity < line.product.stock,
+                    enabled = enabled && line.product.stock > 0,
                     modifier = Modifier.heightIn(min = 48.dp)
                 ) {
                     Text("+")
@@ -293,6 +300,7 @@ private fun OrderLineCard(
 
                 TextButton(
                     onClick = onRemove,
+                    enabled = enabled,
                     modifier = Modifier.heightIn(min = 48.dp)
                 ) {
                     Text("Eliminar")

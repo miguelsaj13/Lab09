@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "615401179441",
+    "project_id": "labfinal-fbe95",
+    "storage_bucket": "labfinal-fbe95.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:615401179441:android:6a2db430b1646ce6bf8810",
+        "android_client_info": {
+          "package_name": "gt.uvg.lab09"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCTePSuj11Y5Ux3WEmvkeiug8COrvQMBAo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

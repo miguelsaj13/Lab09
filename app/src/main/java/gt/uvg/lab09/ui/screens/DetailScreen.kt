@@ -1,11 +1,28 @@
 package gt.uvg.lab09.ui.screens
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import gt.uvg.lab09.model.Product
@@ -23,13 +40,19 @@ fun DetailScreen(
     quantityInOrder: Int,
     orderFeedback: OrderFeedback?,
     onAddToOrder: () -> Unit,
-    onDismissOrderFeedback: () -> Unit
+    onDismissOrderFeedback: () -> Unit,
+    isBusy: Boolean,
+    isTesting: Boolean,
+    testResult: String?,
+    onConcurrencyTest: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     var showTechnicalDetails by rememberSaveable {
         mutableStateOf(false)
     }
 
     Scaffold(
+        modifier = modifier,
         topBar = {
             TopAppBar(
                 title = {
@@ -77,13 +100,19 @@ fun DetailScreen(
 
             Button(
                 onClick = onAddToOrder,
-                enabled = product.stock > 0,
+                enabled = product.stock > 0 && !isBusy,
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 48.dp)
             ) {
-                Text("Agregar al pedido")
+                Text(if (isBusy) "Procesando reserva…" else "Agregar al pedido")
             }
+
+            Text("La prueba reserva existencias reales sin agregarlas al pedido. Úsala con un producto preparado para pruebas.")
+            OutlinedButton(onClick = onConcurrencyTest, enabled = !isBusy) {
+                Text(if (isTesting) "Probando…" else "Prueba de concurrencia · 20 intentos")
+            }
+            testResult?.let { Text(it) }
 
             orderFeedback?.let { feedback ->
                 Surface(

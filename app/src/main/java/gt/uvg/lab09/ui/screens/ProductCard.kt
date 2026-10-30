@@ -1,6 +1,5 @@
 package gt.uvg.lab09.ui.screens
 
-import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,7 +11,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import gt.uvg.lab09.model.Product
@@ -26,21 +24,6 @@ fun ProductCard(
     onFavoriteClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    //Para catlog
-    DisposableEffect(product.id) {
-        Log.d(
-            "CatalogProbe",
-            "ENTER id=${product.id}"
-        )
-
-        onDispose {
-            Log.d(
-                "CatalogProbe",
-                "EXIT id=${product.id}"
-            )
-        }
-    }
-
     Card(
         modifier = modifier
             .clickable {
