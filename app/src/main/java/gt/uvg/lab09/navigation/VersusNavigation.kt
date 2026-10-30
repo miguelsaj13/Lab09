@@ -14,7 +14,8 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import gt.uvg.lab09.model.BillingType
 import gt.uvg.lab09.model.PaymentMethod
-import gt.uvg.lab09.network.OrderDto
+import gt.uvg.lab09.model.ProductSort
+import gt.uvg.lab09.model.RemoteOrder
 import gt.uvg.lab09.ui.screens.CatalogScreen
 import gt.uvg.lab09.ui.screens.CheckoutScreen
 import gt.uvg.lab09.ui.screens.ConfirmationScreen
@@ -51,9 +52,9 @@ private val backTransition: ContentTransform =
 fun VersusNavigation(
     uiState: VersusUiState,
     checkoutUiState: CheckoutUiState,
-    confirmationState: RemoteUiState<OrderDto>,
-    ordersState: RemoteUiState<List<OrderDto>>,
-    orderDetailState: RemoteUiState<OrderDto>,
+    confirmationState: RemoteUiState<RemoteOrder>,
+    ordersState: RemoteUiState<List<RemoteOrder>>,
+    orderDetailState: RemoteUiState<RemoteOrder>,
     isConfirmEnabled: Boolean,
 
     onCheckoutNameChange: (String) -> Unit,
@@ -74,6 +75,10 @@ fun VersusNavigation(
     onLoadOrders: () -> Unit,
     onLoadOrderDetail: (String) -> Unit,
 
+    onRetryCatalog: () -> Unit,
+    onSortChange: (ProductSort) -> Unit,
+    onDarkThemeChange: (Boolean) -> Unit,
+    onConcurrencyTest: (Int) -> Unit,
     onFavoriteClick: (Int) -> Unit,
     onQueryChange: (String) -> Unit,
     onAddToOrder: (Int, Int) -> Unit,
@@ -125,6 +130,14 @@ fun VersusNavigation(
 
             entry<VersusNavKey.Catalog> {
                 CatalogScreen(
+                    isLoading = uiState.isCatalogLoading,
+                    error = uiState.catalogError,
+                    isFromCache = uiState.isFromCache,
+                    onRetryClick = onRetryCatalog,
+                    sort = uiState.sort,
+                    onSortChange = onSortChange,
+                    darkTheme = uiState.darkTheme,
+                    onDarkThemeChange = onDarkThemeChange,
                     products = uiState.visibleProducts,
                     totalCount = uiState.products.size,
                     query = uiState.query,
@@ -155,6 +168,10 @@ fun VersusNavigation(
 
                 if (product != null) {
                     DetailScreen(
+                        isBusy = uiState.isOrderBusy || !uiState.isLocalReady || uiState.isTesting,
+                        isTesting = uiState.isTesting && uiState.testProductId == product.id,
+                        testResult = uiState.testResult.takeIf { uiState.testProductId == product.id },
+                        onConcurrencyTest = { onConcurrencyTest(product.id) },
                         product = product,
                         isFavorite = product.id in uiState.favoriteIds,
                         onFavoriteClick = {
@@ -196,6 +213,7 @@ fun VersusNavigation(
 
             entry<VersusNavKey.Order> {
                 OrderScreen(
+                    isBusy = uiState.isOrderBusy || !uiState.isLocalReady || uiState.isTesting,
                     lines = uiState.orderLines,
                     lineSubtotalsMinorUnits = uiState.orderLineSubtotalsMinorUnits,
                     totalMinorUnits = uiState.orderTotalMinorUnits,

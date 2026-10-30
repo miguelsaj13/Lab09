@@ -1,9 +1,10 @@
-
 package gt.uvg.lab09.ui.screens
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -11,9 +12,12 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -25,6 +29,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import gt.uvg.lab09.model.Product
+import gt.uvg.lab09.model.ProductSort
 import kotlinx.coroutines.launch
 
 private const val SCROLL_TO_TOP_THRESHOLD = 4
@@ -44,7 +49,16 @@ fun CatalogScreen(
     onFavoriteClick: (Int) -> Unit,
     orderUnitCount: Int,
     onOrderClick: () -> Unit,
-    onMyOrdersClick: () -> Unit
+    onMyOrdersClick: () -> Unit,
+    isLoading: Boolean,
+    error: String?,
+    isFromCache: Boolean,
+    onRetryClick: () -> Unit,
+    sort: ProductSort,
+    onSortChange: (ProductSort) -> Unit,
+    darkTheme: Boolean,
+    onDarkThemeChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val coroutineScope = rememberCoroutineScope()
 
@@ -63,6 +77,7 @@ fun CatalogScreen(
     }
 
     Scaffold(
+        modifier = modifier,
         topBar = {
             TopAppBar(
                 title = {
@@ -103,6 +118,28 @@ fun CatalogScreen(
                 .padding(top = innerPadding.calculateTopPadding())
         ) {
 
+            Row(modifier = Modifier.padding(horizontal = 16.dp)) {
+                Text("Tema oscuro", modifier = Modifier.weight(1f))
+                Switch(checked = darkTheme, onCheckedChange = onDarkThemeChange)
+            }
+            Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                ProductSort.entries.forEach { option ->
+                    TextButton(onClick = { onSortChange(option) }, enabled = sort != option) {
+                        Text(when (option) {
+                            ProductSort.DEFAULT -> "Original"
+                            ProductSort.NAME -> "Nombre"
+                            ProductSort.PRICE_ASCENDING -> "Precio ↑"
+                            ProductSort.PRICE_DESCENDING -> "Precio ↓"
+                        })
+                    }
+                }
+            }
+            if (isLoading) CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+            if (error != null) {
+                Text(error, modifier = Modifier.padding(16.dp))
+                TextButton(onClick = onRetryClick) { Text("Reintentar") }
+            }
+            if (isFromCache && !isLoading) Text("Catálogo guardado; las reservas necesitan conexión.", modifier = Modifier.padding(16.dp))
             ProductSearchField(
                 query = query,
                 onQueryChange = handleQueryChange,
@@ -122,7 +159,7 @@ fun CatalogScreen(
                 )
             )
 
-            if (products.isEmpty()) {
+            if (products.isEmpty() && !isLoading && error == null) {
                 EmptySearchState(
                     onClearClick = {
                         handleQueryChange("")

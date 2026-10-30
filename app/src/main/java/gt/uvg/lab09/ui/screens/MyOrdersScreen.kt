@@ -1,4 +1,3 @@
-
 package gt.uvg.lab09.ui.screens
 
 import androidx.compose.foundation.clickable
@@ -26,8 +25,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import gt.uvg.lab09.model.RemoteOrder
 import gt.uvg.lab09.model.formatQuetzales
-import gt.uvg.lab09.network.OrderDto
 import gt.uvg.lab09.viewModel.RemoteUiState
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -36,12 +35,14 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyOrdersScreen(
-    ordersState: RemoteUiState<List<OrderDto>>,
+    ordersState: RemoteUiState<List<RemoteOrder>>,
     onOrderClick: (String) -> Unit,
     onRetryClick: () -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Scaffold(
+        modifier = modifier,
         topBar = {
             TopAppBar(
                 title = {
@@ -135,7 +136,7 @@ fun MyOrdersScreen(
 
 @Composable
 private fun OrderSummaryCard(
-    order: OrderDto,
+    order: RemoteOrder,
     onClick: () -> Unit
 ) {
     Card(

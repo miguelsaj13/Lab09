@@ -1,4 +1,3 @@
-
 package gt.uvg.lab09
 
 import android.os.Bundle
@@ -25,8 +24,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
-            Lab09Theme {
-                val versusViewModel: VersusViewModel = viewModel()
+            val versusViewModel: VersusViewModel = viewModel(factory = VersusViewModel.Factory)
+            val themeState = versusViewModel.uiState.collectAsStateWithLifecycle()
+            Lab09Theme(darkTheme = themeState.value.darkTheme) {
 
                 val versusState =
                     versusViewModel.uiState.collectAsStateWithLifecycle()
@@ -51,6 +51,8 @@ class MainActivity : ComponentActivity() {
                     derivedStateOf {
                         checkoutState.value.isFormValid &&
                                 versusState.value.orderUnitCount > 0 &&
+                                !versusState.value.isOrderBusy &&
+                                !versusState.value.isTesting &&
                                 confirmationState.value != RemoteUiState.Loading
                     }
                 }
@@ -96,6 +98,10 @@ class MainActivity : ComponentActivity() {
                     onLoadOrderDetail =
                         versusViewModel::loadOrderDetail,
 
+                    onRetryCatalog = versusViewModel::retryCatalog,
+                    onSortChange = versusViewModel::updateSort,
+                    onDarkThemeChange = versusViewModel::setDarkTheme,
+                    onConcurrencyTest = { id -> versusViewModel.onConcurrencyTest(id, 20) },
                     onFavoriteClick =
                         versusViewModel::toggleFavorite,
                     onQueryChange =

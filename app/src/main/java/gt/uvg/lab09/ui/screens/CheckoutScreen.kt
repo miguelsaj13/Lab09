@@ -1,4 +1,3 @@
-
 package gt.uvg.lab09.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
@@ -48,7 +47,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import gt.uvg.lab09.model.BillingType
 import gt.uvg.lab09.model.PaymentMethod
-import gt.uvg.lab09.network.OrderDto
+import gt.uvg.lab09.model.RemoteOrder
 import gt.uvg.lab09.validation.validateBusinessName
 import gt.uvg.lab09.validation.validateName
 import gt.uvg.lab09.validation.validateNit
@@ -60,7 +59,7 @@ import gt.uvg.lab09.viewModel.RemoteUiState
 @Composable
 fun CheckoutScreen(
     uiState: CheckoutUiState,
-    confirmationState: RemoteUiState<OrderDto>,
+    confirmationState: RemoteUiState<RemoteOrder>,
     isConfirmEnabled: Boolean,
     onNameChange: (String) -> Unit,
     onNumberChange: (String) -> Unit,
@@ -73,7 +72,8 @@ fun CheckoutScreen(
     onNitTouched: () -> Unit,
     onBusinessNameTouched: () -> Unit,
     onConfirmClick: () -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -127,6 +127,7 @@ fun CheckoutScreen(
     val isLoading = confirmationState == RemoteUiState.Loading
 
     Scaffold(
+        modifier = modifier,
         topBar = {
             TopAppBar(
                 title = {
